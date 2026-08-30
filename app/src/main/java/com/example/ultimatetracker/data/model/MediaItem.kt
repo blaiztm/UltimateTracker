@@ -31,6 +31,11 @@ data class MediaItem(
     val keywords: List<String>,
     val category: WatchCategory,
     val coverUri: String?,
+    val review: String,
+    val rating: Int?,
+    val watchedEpisodes: Int = 0,
     val createdAt: Long,
     val updatedAt: Long,
+    val listId: Long = 0,
+    val rowVersion: Long = 1,
 )

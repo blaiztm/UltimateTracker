@@ -15,10 +15,18 @@ data class CatalogItem(
     val mediaType: String,
     val coverUri: String?,
     val year: String?,
+    val length: Int? = null,
+    val genres: List<String> = emptyList(),
 )
 
-class TmdbClient(private val token: String) {
+class TmdbClient(initialToken: String, private val persistToken: (String) -> Unit = {}) {
+    @Volatile private var token: String = initialToken
     val isConfigured: Boolean get() = token.isNotBlank()
+    fun currentToken(): String = token
+    fun updateToken(value: String) {
+        token = value.trim()
+        persistToken(token)
+    }
 
     suspend fun search(query: String, language: String): List<CatalogItem> = withContext(Dispatchers.IO) {
         if (!isConfigured || query.isBlank()) return@withContext emptyList()
@@ -57,6 +65,34 @@ class TmdbClient(private val token: String) {
                     )
                 }
             }
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    suspend fun loadDetails(item: CatalogItem, language: String): CatalogItem = withContext(Dispatchers.IO) {
+        if (!isConfigured) return@withContext item
+        val locale = if (language == "ru") "ru-RU" else "en-US"
+        val kind = if (item.mediaType == BuiltInMediaTypes.MOVIE) "movie" else "tv"
+        val connection = URL("https://api.themoviedb.org/3/$kind/${item.id}?language=$locale")
+            .openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "GET"
+            connection.setRequestProperty("Authorization", "Bearer $token")
+            connection.setRequestProperty("Accept", "application/json")
+            connection.connectTimeout = 10_000
+            connection.readTimeout = 10_000
+            if (connection.responseCode !in 200..299) error("TMDB HTTP ${connection.responseCode}")
+            val root = connection.inputStream.bufferedReader().use { JSONObject(it.readText()) }
+            val field = if (kind == "movie") "runtime" else "number_of_episodes"
+            val genres = root.optJSONArray("genres")?.let { array ->
+                buildList {
+                    for (index in 0 until array.length()) {
+                        array.optJSONObject(index)?.optString("name")?.takeIf(String::isNotBlank)?.let(::add)
+                    }
+                }
+            }.orEmpty()
+            item.copy(length = root.optInt(field).takeIf { it > 0 }, genres = genres)
         } finally {
             connection.disconnect()
         }

@@ -21,8 +21,8 @@ android {
         applicationId = "com.example.ultimatetracker"
         minSdk = 23
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 9
+        versionName = "alpha-1.8"
         buildConfigField("String", "TMDB_READ_ACCESS_TOKEN", "\"$tmdbToken\"")
     }
 
@@ -66,4 +66,5 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
+    testImplementation("org.json:json:20240303")
 }

@@ -86,13 +86,23 @@ fun EditScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit) {
     LaunchedEffect(existing, initialized) {
         val item = existing
         if (!initialized && item != null) {
-            form = MediaFormState(item.id, item.title, item.type, item.length.toString(), item.genres, item.keywords, item.category, item.coverUri, item.createdAt)
+            form = MediaFormState(
+                id = item.id, title = item.title, type = item.type, length = item.length.toString(),
+                genres = item.genres, keywords = item.keywords, category = item.category, coverUri = item.coverUri,
+                review = item.review, rating = item.rating?.toString().orEmpty(), watchedEpisodes = item.watchedEpisodes.toString(), createdAt = item.createdAt,
+            )
             initialized = true
         }
     }
     LaunchedEffect(catalogDraft, itemId) {
         if (itemId == 0L) catalogDraft?.let { suggestion ->
-            form = form.copy(title = suggestion.title, type = suggestion.mediaType, coverUri = suggestion.coverUri)
+            form = form.copy(
+                title = suggestion.title,
+                type = suggestion.mediaType,
+                coverUri = suggestion.coverUri,
+                length = suggestion.length?.toString().orEmpty(),
+                genres = suggestion.genres,
+            )
             viewModel.consumeCatalogDraft()
         }
     }
@@ -146,9 +156,36 @@ fun EditScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit) {
             )
             TagEditor(stringResource(R.string.genres), form.genres, { form = form.copy(genres = form.genres + it) }, { form = form.copy(genres = form.genres - it) })
             TagEditor(stringResource(R.string.keywords), form.keywords, { form = form.copy(keywords = form.keywords + it) }, { form = form.copy(keywords = form.keywords - it) })
+            OutlinedTextField(
+                value = form.review,
+                onValueChange = { if (it.length <= 500) form = form.copy(review = it) },
+                label = { Text(stringResource(R.string.review)) },
+                supportingText = { Text(stringResource(R.string.review_length, form.review.length)) },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3,
+                maxLines = 5,
+            )
+            OutlinedTextField(
+                value = form.rating,
+                onValueChange = { value -> if (value.length <= 2 && value.all(Char::isDigit)) form = form.copy(rating = value) },
+                label = { Text(stringResource(R.string.rating_optional)) },
+                isError = showErrors && form.rating.isNotBlank() && form.rating.toIntOrNull() !in 1..10,
+                supportingText = { if (showErrors && form.rating.isNotBlank() && form.rating.toIntOrNull() !in 1..10) Text(stringResource(R.string.error_rating)) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+            if (form.category == WatchCategory.WATCHING && form.type != BuiltInMediaTypes.MOVIE) {
+                OutlinedTextField(
+                    value = form.watchedEpisodes,
+                    onValueChange = { value -> if (value.all(Char::isDigit)) form = form.copy(watchedEpisodes = value) },
+                    label = { Text(stringResource(R.string.watched_episodes)) },
+                    isError = showErrors && form.validationError() == FormValidationError.WATCHED_EPISODES,
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                )
+            }
             EnumMenu(stringResource(R.string.category), form.category, WatchCategory.entries, { categoryLabel(it) }) { form = form.copy(category = it) }
             if (showErrors) form.validationError()?.let { error ->
-                Text(stringResource(when (error) { FormValidationError.TITLE -> R.string.error_title; FormValidationError.DURATION -> R.string.error_duration; FormValidationError.EPISODES -> R.string.error_episodes }), color = MaterialTheme.colorScheme.error)
+                Text(stringResource(when (error) { FormValidationError.TITLE -> R.string.error_title; FormValidationError.DURATION -> R.string.error_duration; FormValidationError.EPISODES -> R.string.error_episodes; FormValidationError.WATCHED_EPISODES -> R.string.error_watched_episodes; FormValidationError.RATING -> R.string.error_rating }), color = MaterialTheme.colorScheme.error)
             }
             Button(
                 onClick = {

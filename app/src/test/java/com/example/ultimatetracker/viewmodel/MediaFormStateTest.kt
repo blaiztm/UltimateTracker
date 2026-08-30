@@ -18,4 +18,12 @@ class MediaFormStateTest {
     @Test fun validFormPasses() {
         assertNull(MediaFormState(title = "Dune", length = "155").validationError())
     }
+
+    @Test fun ratingOutsideRangeIsRejected() {
+        assertEquals(FormValidationError.RATING, MediaFormState(title = "Dune", length = "155", rating = "11").validationError())
+    }
+
+    @Test fun ratingTenPasses() {
+        assertNull(MediaFormState(title = "Dune", length = "155", rating = "10").validationError())
+    }
 }

@@ -66,7 +66,9 @@ fun BrowseScreen(viewModel: MediaViewModel, onBack: () -> Unit, onUse: (CatalogI
                 state.hasError -> Message(stringResource(R.string.network_error))
                 else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(state.results, key = { "${it.mediaType}-${it.id}" }) { item ->
-                        CatalogCard(item) { onUse(item) }
+                        CatalogCard(item) {
+                            viewModel.selectCatalogItem(item, language) { onUse(item) }
+                        }
                     }
                 }
             }

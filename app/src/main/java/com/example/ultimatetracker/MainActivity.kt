@@ -11,6 +11,8 @@ import com.example.ultimatetracker.navigation.AppNavigation
 import com.example.ultimatetracker.ui.theme.UltimateTrackerTheme
 import com.example.ultimatetracker.viewmodel.MediaViewModel
 import com.example.ultimatetracker.viewmodel.MediaViewModelFactory
+import com.example.ultimatetracker.viewmodel.AccountViewModel
+import com.example.ultimatetracker.viewmodel.AccountViewModelFactory
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,7 +25,8 @@ class MainActivity : AppCompatActivity() {
             UltimateTrackerTheme {
                 val app = application as UltimateTrackerApplication
                 val viewModel: MediaViewModel = viewModel(factory = MediaViewModelFactory(app.repository, app.tmdbClient))
-                AppNavigation(viewModel)
+                val accountViewModel: AccountViewModel = viewModel(factory = AccountViewModelFactory(app.accountRepository, app.backupRepository))
+                AppNavigation(viewModel, accountViewModel)
             }
         }
     }

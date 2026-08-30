@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
@@ -35,6 +37,7 @@ import com.example.ultimatetracker.ui.components.MediaCover
 import com.example.ultimatetracker.viewmodel.MediaViewModel
 import com.example.ultimatetracker.R
 import com.example.ultimatetracker.ui.categoryLabel
+import com.example.ultimatetracker.ui.categoryColor
 import com.example.ultimatetracker.ui.mediaTypeLabel
 
 @Composable
@@ -54,14 +57,21 @@ fun DetailScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit, on
     }) { padding ->
         val value = item
         if (value == null) Text(stringResource(R.string.item_not_found), Modifier.padding(padding).padding(24.dp)) else
-            Column(Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 MediaCover(value.coverUri, value.title, Modifier.fillMaxWidth().height(280.dp))
                 Text(value.title, style = MaterialTheme.typography.headlineSmall)
                 DetailRow(stringResource(R.string.type), mediaTypeLabel(value.type))
-                DetailRow(stringResource(R.string.category), categoryLabel(value.category))
+                DetailRow(stringResource(R.string.category), categoryLabel(value.category), categoryColor(value.category))
                 DetailRow(if (value.type == BuiltInMediaTypes.MOVIE) stringResource(R.string.duration) else stringResource(R.string.episode_count), stringResource(if (value.type == BuiltInMediaTypes.MOVIE) R.string.minutes_format else R.string.episodes_format, value.length))
                 DetailRow(stringResource(R.string.genres), value.genres.ifEmpty { listOf(stringResource(R.string.not_specified)) }.joinToString())
                 DetailRow(stringResource(R.string.keywords), value.keywords.ifEmpty { listOf(stringResource(R.string.not_specified)) }.joinToString())
+                value.rating?.let { rating ->
+                    DetailRow(stringResource(R.string.rating), stringResource(R.string.rating_format, rating))
+                }
+                if (value.review.isNotBlank()) {
+                    Text(stringResource(R.string.review), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(value.review, style = MaterialTheme.typography.bodyLarge)
+                }
                 Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.edit)) }
             }
     }
@@ -75,9 +85,9 @@ fun DetailScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit, on
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(label: String, value: String, valueColor: androidx.compose.ui.graphics.Color? = null) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value)
+        Text(value, color = valueColor ?: MaterialTheme.colorScheme.onSurface)
     }
 }

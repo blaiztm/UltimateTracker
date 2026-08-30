@@ -4,7 +4,9 @@
     <application
         android:name=".UltimateTrackerApplication"
         android:allowBackup="true"
-        android:label="UltimateTracker"
+        android:icon="@drawable/ic_launcher_utracker"
+        android:roundIcon="@drawable/ic_launcher_utracker"
+        android:label="@string/app_name"
         android:localeConfig="@xml/locales_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.UltimateTracker">

@@ -1,13 +1,26 @@
 package com.example.ultimatetracker.data.local
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.example.ultimatetracker.data.local.account.UserListEntity
 import com.example.ultimatetracker.data.model.MediaItem
 import com.example.ultimatetracker.data.model.WatchCategory
 
-@Entity(tableName = "media_items")
+@Entity(
+    tableName = "media_items",
+    foreignKeys = [ForeignKey(
+        entity = UserListEntity::class,
+        parentColumns = ["id"],
+        childColumns = ["listId"],
+        onDelete = ForeignKey.CASCADE,
+    )],
+    indices = [Index(value = ["listId"]), Index(value = ["listId", "updatedAt"])],
+)
 data class MediaEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val listId: Long,
     val title: String,
     val type: String,
     val length: Int,
@@ -15,9 +28,14 @@ data class MediaEntity(
     val keywords: List<String>,
     val category: WatchCategory,
     val coverUri: String?,
+    val review: String,
+    val rating: Int?,
+    val watchedEpisodes: Int = 0,
     val createdAt: Long,
     val updatedAt: Long,
+    val rowVersion: Long = 1,
+    val deletedAt: Long? = null,
 )
 
-fun MediaEntity.toModel() = MediaItem(id, title, type, length, genres, keywords, category, coverUri, createdAt, updatedAt)
-fun MediaItem.toEntity() = MediaEntity(id, title, type, length, genres, keywords, category, coverUri, createdAt, updatedAt)
+fun MediaEntity.toModel() = MediaItem(id, title, type, length, genres, keywords, category, coverUri, review, rating, watchedEpisodes, createdAt, updatedAt, listId, rowVersion)
+fun MediaItem.toEntity(ownedListId: Long) = MediaEntity(id, ownedListId, title, type, length, genres, keywords, category, coverUri, review, rating, watchedEpisodes, createdAt, updatedAt, rowVersion)

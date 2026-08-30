@@ -11,6 +11,7 @@ UltimateTracker is a personal movie, TV series, and anime tracker built with Kot
 - English and Russian in-app language selection; English is the default.
 - TMDB-powered catalog search, title suggestions, and automatic cover lookup.
 - System Photo Picker for choosing a local cover.
+- Portable JSON backup import/export for moving all lists, titles, metadata, and local covers between devices.
 
 ## TMDB setup
 
