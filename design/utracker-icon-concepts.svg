@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <rect width="1200" height="720" fill="#101216"/>
+  <text x="60" y="58" fill="#f4f5f7" font-family="sans-serif" font-size="30" font-weight="700">UTracker — icon concepts</text>
+  <text x="60" y="88" fill="#9da3ae" font-family="sans-serif" font-size="16">10 directions for review</text>
+  <g font-family="sans-serif" font-size="15" fill="#c9ced8" text-anchor="middle">
+    <g transform="translate(70 125)"><rect width="190" height="220" rx="28" fill="#b99aff"/><path d="M48 65h94v90H48z" fill="none" stroke="#2a1d4d" stroke-width="12"/><path d="M70 175h50" stroke="#2a1d4d" stroke-width="12" stroke-linecap="round"/><text x="95" y="250">01 · frame · light purple</text></g>
+    <g transform="translate(285 125)"><rect width="190" height="220" rx="28" fill="#7357ff"/><circle cx="95" cy="110" r="58" fill="#171326"/><path d="M75 80l45 30-45 30z" fill="#fff"/><text x="95" y="250">02 · play orb</text></g>
+    <g transform="translate(500 125)"><rect width="190" height="220" rx="28" fill="#ffcc4d"/><path d="M45 145V75l50-30 50 30v70l-50 30z" fill="#262015"/><path d="M95 45v130M45 75l50 30 50-30" fill="none" stroke="#ffcc4d" stroke-width="8"/><text x="95" y="250">03 · library</text></g>
+    <g transform="translate(715 125)"><rect width="190" height="220" rx="28" fill="#ed5b72"/><path d="M55 65h80a15 15 0 0 1 15 15v60a15 15 0 0 1-15 15H55a15 15 0 0 1-15-15V80a15 15 0 0 1 15-15z" fill="#321820"/><path d="M65 115h60M65 135h35" stroke="#ed5b72" stroke-width="9" stroke-linecap="round"/><text x="95" y="250">04 · notes</text></g>
+    <g transform="translate(930 125)"><rect width="190" height="220" rx="28" fill="#8bd450"/><path d="M95 42c35 0 62 28 62 62 0 42-62 76-62 76s-62-34-62-76c0-34 27-62 62-62z" fill="#172817"/><circle cx="95" cy="104" r="20" fill="#8bd450"/><text x="95" y="250">05 · pin</text></g>
+    <g transform="translate(70 400)"><rect width="190" height="220" rx="28" fill="#152d50"/><path d="M52 150l43-88 43 88-43-25z" fill="#53b7ff"/><path d="M95 62v63" stroke="#f5fbff" stroke-width="8"/><text x="95" y="250">06 · compass</text></g>
+    <g transform="translate(285 400)"><rect width="190" height="220" rx="28" fill="#f2f3f5"/><path d="M47 77h96v96H47z" fill="#21242b"/><path d="M68 98h54v54H68z" fill="#f2f3f5"/><path d="M68 98l54 54M122 98l-54 54" stroke="#21242b" stroke-width="7"/><text x="95" y="250" fill="#c9ced8">07 · grid</text></g>
+    <g transform="translate(500 400)"><rect width="190" height="220" rx="28" fill="#ff8b3d"/><path d="M95 48c33 0 59 26 59 59 0 43-59 70-59 70s-59-27-59-70c0-33 26-59 59-59z" fill="#351b11"/><path d="M77 108h36M95 90v36" stroke="#ff8b3d" stroke-width="10" stroke-linecap="round"/><text x="95" y="250">08 · focus</text></g>
+    <g transform="translate(715 400)"><rect width="190" height="220" rx="28" fill="#c9a7ff"/><path d="M55 150V75h80v75" fill="none" stroke="#241936" stroke-width="13"/><path d="M45 150h100" stroke="#241936" stroke-width="13" stroke-linecap="round"/><circle cx="95" cy="75" r="12" fill="#c9a7ff" stroke="#241936" stroke-width="8"/><text x="95" y="250">09 · shelf</text></g>
+    <g transform="translate(930 400)"><rect width="190" height="220" rx="28" fill="#24a878"/><path d="M48 78h94v70H48z" fill="#10291f"/><path d="M75 78v70M115 78v70" stroke="#24a878" stroke-width="9"/><path d="M65 170h60" stroke="#10291f" stroke-width="12" stroke-linecap="round"/><text x="95" y="250">10 · stack</text></g>
+  </g>
+</svg>

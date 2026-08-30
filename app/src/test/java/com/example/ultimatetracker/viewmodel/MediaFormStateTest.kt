@@ -1,21 +1,29 @@
 package com.example.ultimatetracker.viewmodel
 
-import com.example.ultimatetracker.data.model.MediaType
+import com.example.ultimatetracker.data.model.BuiltInMediaTypes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class MediaFormStateTest {
     @Test fun blankTitleIsRejected() {
-        assertEquals("Введите название", MediaFormState(length = "120").validationError())
+        assertEquals(FormValidationError.TITLE, MediaFormState(length = "120").validationError())
     }
 
     @Test fun invalidEpisodeCountIsRejected() {
-        val form = MediaFormState(title = "Arcane", type = MediaType.SERIES, length = "0")
-        assertEquals("Укажите количество серий", form.validationError())
+        val form = MediaFormState(title = "Arcane", type = BuiltInMediaTypes.SERIES, length = "0")
+        assertEquals(FormValidationError.EPISODES, form.validationError())
     }
 
     @Test fun validFormPasses() {
         assertNull(MediaFormState(title = "Dune", length = "155").validationError())
+    }
+
+    @Test fun ratingOutsideRangeIsRejected() {
+        assertEquals(FormValidationError.RATING, MediaFormState(title = "Dune", length = "155", rating = "11").validationError())
+    }
+
+    @Test fun ratingTenPasses() {
+        assertNull(MediaFormState(title = "Dune", length = "155", rating = "10").validationError())
     }
 }

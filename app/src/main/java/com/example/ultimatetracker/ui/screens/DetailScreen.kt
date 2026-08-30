@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
@@ -28,10 +30,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.ultimatetracker.data.model.MediaType
+import com.example.ultimatetracker.data.model.BuiltInMediaTypes
 import com.example.ultimatetracker.ui.components.MediaCover
 import com.example.ultimatetracker.viewmodel.MediaViewModel
+import com.example.ultimatetracker.R
+import com.example.ultimatetracker.ui.categoryLabel
+import com.example.ultimatetracker.ui.categoryColor
+import com.example.ultimatetracker.ui.mediaTypeLabel
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,40 +47,47 @@ fun DetailScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit, on
     var confirmDelete by remember { mutableStateOf(false) }
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text(item?.title ?: "Произведение") },
-            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад") } },
+            title = { Text(item?.title ?: stringResource(R.string.media_item)) },
+            navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back)) } },
             actions = {
-                IconButton(onClick = onEdit) { Icon(Icons.Outlined.Edit, "Редактировать") }
-                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Outlined.Delete, "Удалить") }
+                IconButton(onClick = onEdit) { Icon(Icons.Outlined.Edit, stringResource(R.string.edit)) }
+                IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Outlined.Delete, stringResource(R.string.delete)) }
             },
         )
     }) { padding ->
         val value = item
-        if (value == null) Text("Запись не найдена", Modifier.padding(padding).padding(24.dp)) else
-            Column(Modifier.fillMaxSize().padding(padding).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        if (value == null) Text(stringResource(R.string.item_not_found), Modifier.padding(padding).padding(24.dp)) else
+            Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 MediaCover(value.coverUri, value.title, Modifier.fillMaxWidth().height(280.dp))
                 Text(value.title, style = MaterialTheme.typography.headlineSmall)
-                DetailRow("Тип", value.type.title)
-                DetailRow("Категория", value.category.title)
-                DetailRow(if (value.type == MediaType.MOVIE) "Длительность" else "Количество серий", if (value.type == MediaType.MOVIE) "${value.length} мин" else value.length.toString())
-                DetailRow("Жанры", value.genres.ifEmpty { listOf("Не указаны") }.joinToString())
-                DetailRow("Ключевые слова", value.keywords.ifEmpty { listOf("Не указаны") }.joinToString())
-                Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text("Редактировать") }
+                DetailRow(stringResource(R.string.type), mediaTypeLabel(value.type))
+                DetailRow(stringResource(R.string.category), categoryLabel(value.category), categoryColor(value.category))
+                DetailRow(if (value.type == BuiltInMediaTypes.MOVIE) stringResource(R.string.duration) else stringResource(R.string.episode_count), stringResource(if (value.type == BuiltInMediaTypes.MOVIE) R.string.minutes_format else R.string.episodes_format, value.length))
+                DetailRow(stringResource(R.string.genres), value.genres.ifEmpty { listOf(stringResource(R.string.not_specified)) }.joinToString())
+                DetailRow(stringResource(R.string.keywords), value.keywords.ifEmpty { listOf(stringResource(R.string.not_specified)) }.joinToString())
+                value.rating?.let { rating ->
+                    DetailRow(stringResource(R.string.rating), stringResource(R.string.rating_format, rating))
+                }
+                if (value.review.isNotBlank()) {
+                    Text(stringResource(R.string.review), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(value.review, style = MaterialTheme.typography.bodyLarge)
+                }
+                Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.edit)) }
             }
     }
     if (confirmDelete) AlertDialog(
         onDismissRequest = { confirmDelete = false },
-        title = { Text("Удалить запись?") },
-        text = { Text("Это действие нельзя отменить.") },
-        confirmButton = { TextButton(onClick = { item?.let { viewModel.delete(it, onBack) } }) { Text("Удалить") } },
-        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Отмена") } },
+        title = { Text(stringResource(R.string.delete_item_title)) },
+        text = { Text(stringResource(R.string.delete_item_message)) },
+        confirmButton = { TextButton(onClick = { item?.let { viewModel.delete(it, onBack) } }) { Text(stringResource(R.string.delete)) } },
+        dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
 @Composable
-private fun DetailRow(label: String, value: String) {
+private fun DetailRow(label: String, value: String, valueColor: androidx.compose.ui.graphics.Color? = null) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value)
+        Text(value, color = valueColor ?: MaterialTheme.colorScheme.onSurface)
     }
 }
