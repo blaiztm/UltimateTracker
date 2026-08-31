@@ -15,30 +15,12 @@ UltimateTracker is my small pet project designed for myself. It's a personal mov
 
 ## TMDB setup
 
-Online discovery uses the TMDB API. Create an API Read Access Token in your TMDB account, then add it to your untracked `local.properties` file:
+You can use your own TMDB (movies database) API read token from settings.
 
-```properties
-TMDB_READ_ACCESS_TOKEN=your_token_here
-```
+## App setup
 
-Never commit `local.properties` or your token. The rest of the app remains functional when the token is missing.
-
-This product uses the TMDB API but is not endorsed or certified by TMDB.
-
-## Run
-
-1. Open this folder in a current Android Studio version.
-2. Wait for Gradle Sync and install Android SDK 36 if prompted.
-3. Create an emulator or connect a device running Android 6.0 (API 23) or newer.
-4. Run the `app` configuration.
-
-Build and test from the Android Studio terminal:
-
-```powershell
-.\gradlew.bat testDebugUnitTest assembleDebug
-```
-
-The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
+1. Go into realeses and download apk file.
+2. Install apk on your android phone
 
 ## Architecture
 
