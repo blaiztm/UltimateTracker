@@ -1,6 +1,6 @@
 # UltimateTracker
 
-UltimateTracker is a personal movie, TV series, and anime tracker built with Kotlin and Jetpack Compose.
+UltimateTracker is my small pet project designed for myself. It's a personal movie, TV series, and anime tracker built with Kotlin and Jetpack Compose. And you are free to use it!
 
 ## Features
 
