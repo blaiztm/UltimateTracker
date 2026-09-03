@@ -51,7 +51,7 @@ class BackupCodecTest {
         val wrongError = assertThrows(BackupFormatException::class.java) { BackupCodec.decode(wrong) }
         assertEquals(BackupFormatException.Reason.WRONG_FORMAT, wrongError.reason)
 
-        val future = BackupCodec.encode(payload).replace("\"schemaVersion\": 1", "\"schemaVersion\": 99")
+        val future = BackupCodec.encode(payload).replace("\"schemaVersion\": ${BackupCodec.SCHEMA_VERSION}", "\"schemaVersion\": 99")
         val futureError = assertThrows(BackupFormatException::class.java) { BackupCodec.decode(future) }
         assertEquals(BackupFormatException.Reason.UNSUPPORTED_VERSION, futureError.reason)
     }

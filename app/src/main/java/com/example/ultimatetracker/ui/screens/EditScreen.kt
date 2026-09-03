@@ -1,6 +1,7 @@
 package com.example.ultimatetracker.ui.screens
 
 import android.content.Intent
+import android.app.DatePickerDialog
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,12 +52,17 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
+import java.text.DateFormat
+import java.util.Calendar
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ultimatetracker.data.model.BuiltInMediaTypes
+import com.example.ultimatetracker.data.model.CategoryRef
 import com.example.ultimatetracker.data.model.WatchCategory
+import com.example.ultimatetracker.data.model.CategoryColor
+import com.example.ultimatetracker.data.local.CategoryEntity
 import com.example.ultimatetracker.ui.components.MediaCover
 import com.example.ultimatetracker.viewmodel.MediaFormState
 import com.example.ultimatetracker.viewmodel.MediaViewModel
@@ -71,6 +77,8 @@ import com.example.ultimatetracker.ui.mediaTypeLabel
 fun EditScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit) {
     val existing by viewModel.observeItem(itemId).collectAsStateWithLifecycle(initialValue = null)
     val mediaTypes by viewModel.mediaTypes.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val tagVocabulary by viewModel.tagVocabulary.collectAsStateWithLifecycle()
     val catalogDraft by viewModel.catalogDraft.collectAsStateWithLifecycle()
     var form by remember(itemId) { mutableStateOf(MediaFormState(id = itemId)) }
     var initialized by remember(itemId) { mutableStateOf(itemId == 0L) }
@@ -89,7 +97,7 @@ fun EditScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit) {
             form = MediaFormState(
                 id = item.id, title = item.title, type = item.type, length = item.length.toString(),
                 genres = item.genres, keywords = item.keywords, category = item.category, coverUri = item.coverUri,
-                review = item.review, rating = item.rating?.toString().orEmpty(), watchedEpisodes = item.watchedEpisodes.toString(), createdAt = item.createdAt,
+                review = item.review, rating = item.rating?.toString().orEmpty(), priority = item.priority?.toString().orEmpty(), watchedEpisodes = item.watchedEpisodes.toString(), watchStartedAt = item.watchStartedAt, watchEndedAt = item.watchEndedAt, createdAt = item.createdAt,
             )
             initialized = true
         }
@@ -154,8 +162,8 @@ fun EditScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
             )
-            TagEditor(stringResource(R.string.genres), form.genres, { form = form.copy(genres = form.genres + it) }, { form = form.copy(genres = form.genres - it) })
-            TagEditor(stringResource(R.string.keywords), form.keywords, { form = form.copy(keywords = form.keywords + it) }, { form = form.copy(keywords = form.keywords - it) })
+            TagEditor(stringResource(R.string.genres), form.genres, tagVocabulary.genres, { form = form.copy(genres = form.genres + it) }, { form = form.copy(genres = form.genres - it) })
+            TagEditor(stringResource(R.string.keywords), form.keywords, tagVocabulary.keywords, { form = form.copy(keywords = form.keywords + it) }, { form = form.copy(keywords = form.keywords - it) })
             OutlinedTextField(
                 value = form.review,
                 onValueChange = { if (it.length <= 500) form = form.copy(review = it) },
@@ -165,16 +173,26 @@ fun EditScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit) {
                 minLines = 3,
                 maxLines = 5,
             )
-            OutlinedTextField(
-                value = form.rating,
-                onValueChange = { value -> if (value.length <= 2 && value.all(Char::isDigit)) form = form.copy(rating = value) },
-                label = { Text(stringResource(R.string.rating_optional)) },
-                isError = showErrors && form.rating.isNotBlank() && form.rating.toIntOrNull() !in 1..10,
-                supportingText = { if (showErrors && form.rating.isNotBlank() && form.rating.toIntOrNull() !in 1..10) Text(stringResource(R.string.error_rating)) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-            if (form.category == WatchCategory.WATCHING && form.type != BuiltInMediaTypes.MOVIE) {
+            if (CategoryRef.builtIn(form.category) == WatchCategory.PLANNED) {
+                OutlinedTextField(
+                    value = form.priority,
+                    onValueChange = { value -> if (value.length <= 1 && value.all(Char::isDigit)) form = form.copy(priority = value) },
+                    label = { Text(stringResource(R.string.priority_optional)) },
+                    isError = showErrors && form.priority.isNotBlank() && form.priority.toIntOrNull() !in 1..4,
+                    supportingText = { if (showErrors && form.priority.isNotBlank() && form.priority.toIntOrNull() !in 1..4) Text(stringResource(R.string.error_priority)) },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                )
+            } else {
+                OutlinedTextField(
+                    value = form.rating,
+                    onValueChange = { value -> if (value.length <= 2 && value.all(Char::isDigit)) form = form.copy(rating = value) },
+                    label = { Text(stringResource(R.string.rating_optional)) },
+                    isError = showErrors && form.rating.isNotBlank() && form.rating.toIntOrNull() !in 1..10,
+                    supportingText = { if (showErrors && form.rating.isNotBlank() && form.rating.toIntOrNull() !in 1..10) Text(stringResource(R.string.error_rating)) },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true,
+                )
+            }
+            if (CategoryRef.builtIn(form.category) in setOf(WatchCategory.WATCHING, WatchCategory.ON_HOLD) && form.type != BuiltInMediaTypes.MOVIE) {
                 OutlinedTextField(
                     value = form.watchedEpisodes,
                     onValueChange = { value -> if (value.all(Char::isDigit)) form = form.copy(watchedEpisodes = value) },
@@ -183,9 +201,11 @@ fun EditScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(), singleLine = true,
                 )
             }
-            EnumMenu(stringResource(R.string.category), form.category, WatchCategory.entries, { categoryLabel(it) }) { form = form.copy(category = it) }
+            DateSelector(stringResource(R.string.watch_start_date), form.watchStartedAt) { form = form.copy(watchStartedAt = it) }
+            DateSelector(stringResource(R.string.watch_end_date), form.watchEndedAt) { form = form.copy(watchEndedAt = it) }
+            CategoryMenu(form.category, categories, onSelect = { form = form.copy(category = it) }, onAdd = { name, color -> viewModel.addCategory(name, color) })
             if (showErrors) form.validationError()?.let { error ->
-                Text(stringResource(when (error) { FormValidationError.TITLE -> R.string.error_title; FormValidationError.DURATION -> R.string.error_duration; FormValidationError.EPISODES -> R.string.error_episodes; FormValidationError.WATCHED_EPISODES -> R.string.error_watched_episodes; FormValidationError.RATING -> R.string.error_rating }), color = MaterialTheme.colorScheme.error)
+                Text(stringResource(when (error) { FormValidationError.TITLE -> R.string.error_title; FormValidationError.DURATION -> R.string.error_duration; FormValidationError.EPISODES -> R.string.error_episodes; FormValidationError.WATCHED_EPISODES -> R.string.error_watched_episodes; FormValidationError.RATING -> R.string.error_rating; FormValidationError.PRIORITY -> R.string.error_priority; FormValidationError.DATE_RANGE -> R.string.error_date_range }), color = MaterialTheme.colorScheme.error)
             }
             Button(
                 onClick = {
@@ -195,6 +215,23 @@ fun EditScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
             ) { Text(stringResource(R.string.save)) }
         }
+    }
+}
+
+@Composable
+private fun DateSelector(label: String, value: Long?, onValueChange: (Long?) -> Unit) {
+    val context = LocalContext.current
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(
+            onClick = {
+                val calendar = Calendar.getInstance().apply { value?.let { timeInMillis = it } }
+                DatePickerDialog(context, { _, year, month, day ->
+                    onValueChange(Calendar.getInstance().apply { set(year, month, day, 0, 0, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis)
+                }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+            },
+            modifier = Modifier.weight(1f),
+        ) { Text("$label: ${value?.let { DateFormat.getDateInstance().format(it) } ?: stringResource(R.string.not_specified)}") }
+        if (value != null) TextButton(onClick = { onValueChange(null) }) { Text(stringResource(R.string.clear)) }
     }
 }
 
@@ -226,14 +263,37 @@ private fun TypeMenu(selected: String, options: List<String>, onSelect: (String)
 }
 
 @Composable
+private fun CategoryMenu(selected: String, custom: List<CategoryEntity>, onSelect: (String) -> Unit, onAdd: (String, CategoryColor) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    var adding by remember { mutableStateOf(false) }
+    var name by remember { mutableStateOf("") }
+    var color by remember { mutableStateOf(CategoryColor.RED) }
+    val label = CategoryRef.builtIn(selected)?.let { categoryLabel(it) } ?: custom.firstOrNull { it.id == selected }?.name ?: selected
+    Box(Modifier.fillMaxWidth()) {
+        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.category_format, label)) }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            WatchCategory.entries.forEach { category -> DropdownMenuItem(text = { Text(categoryLabel(category)) }, onClick = { onSelect(category.name); expanded = false }) }
+            custom.forEach { category -> DropdownMenuItem(text = { Text(category.name) }, onClick = { onSelect(category.id); expanded = false }) }
+            DropdownMenuItem(text = { Text(stringResource(R.string.add_category)) }, leadingIcon = { Icon(Icons.Default.Add, null) }, onClick = { expanded = false; adding = true })
+        }
+    }
+    if (adding) AlertDialog(onDismissRequest = { adding = false }, title = { Text(stringResource(R.string.add_category)) }, text = {
+        Column { OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.category_name)) }, singleLine = true); CategoryColor.entries.forEach { option -> TextButton(onClick = { color = option }) { Text(if (color == option) "✓ ${option.name.lowercase()}" else option.name.lowercase()) } } }
+    }, confirmButton = { TextButton(onClick = { if (name.isNotBlank()) { onAdd(name, color); adding = false; name = "" } }) { Text(stringResource(R.string.add)) } }, dismissButton = { TextButton(onClick = { adding = false }) { Text(stringResource(R.string.cancel)) } })
+}
+
+@Composable
 @OptIn(ExperimentalLayoutApi::class)
-private fun TagEditor(label: String, tags: List<String>, onAdd: (String) -> Unit, onRemove: (String) -> Unit) {
+private fun TagEditor(label: String, tags: List<String>, suggestions: List<String>, onAdd: (String) -> Unit, onRemove: (String) -> Unit) {
     var input by remember { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
     fun submit() {
         val tag = input.trim()
         if (tag.isNotEmpty() && tags.none { it.equals(tag, ignoreCase = true) }) onAdd(tag)
         input = ""
+    }
+    val matchingSuggestions = suggestions.filter { suggestion ->
+        suggestion.contains(input.trim(), ignoreCase = true) && tags.none { it.equals(suggestion, ignoreCase = true) }
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
@@ -247,6 +307,18 @@ private fun TagEditor(label: String, tags: List<String>, onAdd: (String) -> Unit
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
+        if (matchingSuggestions.isNotEmpty()) FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            matchingSuggestions.forEach { suggestion ->
+                InputChip(
+                    selected = false,
+                    onClick = { onAdd(suggestion); input = "" },
+                    label = { Text(suggestion) },
+                )
+            }
+        }
         if (tags.isNotEmpty()) FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),

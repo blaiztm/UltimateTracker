@@ -18,6 +18,9 @@ interface MediaDao {
 
     @Upsert suspend fun upsert(item: MediaEntity): Long
 
+    @Query("UPDATE media_items SET category = :replacement, updatedAt = :now, rowVersion = rowVersion + 1 WHERE listId = :listId AND category = :category AND deletedAt IS NULL")
+    suspend fun replaceCategory(listId: Long, category: String, replacement: String, now: Long)
+
     @Query("UPDATE media_items SET deletedAt = :now, updatedAt = :now, rowVersion = rowVersion + 1 WHERE id = :id AND listId = :listId AND deletedAt IS NULL")
     suspend fun softDelete(id: Long, listId: Long, now: Long): Int
 }

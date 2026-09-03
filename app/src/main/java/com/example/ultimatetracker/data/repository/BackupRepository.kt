@@ -7,6 +7,7 @@ import androidx.room.withTransaction
 import com.example.ultimatetracker.data.backup.BackupCodec
 import com.example.ultimatetracker.data.backup.BackupFormatException
 import com.example.ultimatetracker.data.backup.BackupItem
+import com.example.ultimatetracker.data.backup.BackupCategory
 import com.example.ultimatetracker.data.backup.BackupList
 import com.example.ultimatetracker.data.backup.BackupPayload
 import com.example.ultimatetracker.data.local.AppDatabase
@@ -14,6 +15,9 @@ import com.example.ultimatetracker.data.local.MediaEntity
 import com.example.ultimatetracker.data.local.account.AuditEventEntity
 import com.example.ultimatetracker.data.local.account.UserListEntity
 import com.example.ultimatetracker.data.model.BuiltInMediaTypes
+import com.example.ultimatetracker.data.model.WatchCategory
+import com.example.ultimatetracker.data.model.CategoryRef
+import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -33,11 +37,12 @@ class BackupRepository(
         val lists = database.accountDao().snapshotLists(identity.userId)
         val items = if (lists.isEmpty()) emptyList() else database.mediaDao().snapshotForLists(lists.map { it.id })
         val byList = items.groupBy { it.listId }
+        val categoriesByList = if (lists.isEmpty()) emptyMap() else database.categoryDao().snapshotForLists(lists.map { it.id }).groupBy { it.listId }
         val payload = BackupPayload(
             exportedAt = System.currentTimeMillis(),
             appVersion = appVersion,
             lists = lists.map { list ->
-                BackupList(list.title, list.position, list.archivedAt != null, byList[list.id].orEmpty().map(::toBackupItem))
+                BackupList(list.title, list.position, list.archivedAt != null, categoriesByList[list.id].orEmpty().map { BackupCategory(it.id, it.name, com.example.ultimatetracker.data.model.CategoryColor.valueOf(it.color), it.position, it.createdAt) }, byList[list.id].orEmpty().map(::toBackupItem))
             },
         )
         val bytes = BackupCodec.encode(payload).toByteArray(Charsets.UTF_8)
@@ -79,6 +84,9 @@ class BackupRepository(
                         updatedAt = time,
                         archivedAt = time.takeIf { sourceList.archived },
                     ))
+                    sourceList.categories.forEach { category ->
+                        database.categoryDao().insert(com.example.ultimatetracker.data.local.CategoryEntity(category.id, listId, category.name, category.name.trim().lowercase(), category.color.name, category.position, category.createdAt))
+                    }
                     sourceList.items.forEach { item ->
                         item.type.takeUnless { it in BuiltInMediaTypes.entries }?.let { database.mediaTypeDao().insert(com.example.ultimatetracker.data.local.MediaTypeEntity(name = it)) }
                         val cover = materializeCover(item, createdCovers)
@@ -93,7 +101,10 @@ class BackupRepository(
                             coverUri = cover,
                             review = item.review,
                             rating = item.rating,
+                            priority = item.priority,
                             watchedEpisodes = item.watchedEpisodes,
+                            watchStartedAt = item.watchStartedAt,
+                            watchEndedAt = item.watchEndedAt,
                             createdAt = item.createdAt,
                             updatedAt = item.updatedAt,
                         ))
@@ -123,14 +134,17 @@ class BackupRepository(
             coverBase64 = localBytes?.second,
             review = entity.review,
             rating = entity.rating,
+            priority = entity.priority,
             watchedEpisodes = entity.watchedEpisodes,
+            watchStartedAt = entity.watchStartedAt,
+            watchEndedAt = entity.watchEndedAt,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
         )
     }
 
     private fun readCover(value: String): Pair<String, String>? {
-        val uri = Uri.parse(value)
+        val uri = value.toUri()
         val input = when (uri.scheme) {
             "file" -> uri.path?.let(::File)?.takeIf(File::isFile)?.let(::FileInputStream)
             else -> context.contentResolver.openInputStream(uri)

@@ -7,6 +7,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
 import com.example.ultimatetracker.navigation.AppNavigation
 import com.example.ultimatetracker.ui.theme.UltimateTrackerTheme
 import com.example.ultimatetracker.viewmodel.MediaViewModel
@@ -22,8 +24,9 @@ class MainActivity : AppCompatActivity() {
         }
         enableEdgeToEdge()
         setContent {
-            UltimateTrackerTheme {
-                val app = application as UltimateTrackerApplication
+            val app = application as UltimateTrackerApplication
+            val theme by app.theme.collectAsStateWithLifecycle()
+            UltimateTrackerTheme(theme) {
                 val viewModel: MediaViewModel = viewModel(factory = MediaViewModelFactory(app.repository, app.tmdbClient))
                 val accountViewModel: AccountViewModel = viewModel(factory = AccountViewModelFactory(app.accountRepository, app.backupRepository))
                 AppNavigation(viewModel, accountViewModel)

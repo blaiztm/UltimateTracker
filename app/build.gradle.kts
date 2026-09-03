@@ -22,7 +22,7 @@ android {
         minSdk = 23
         targetSdk = 36
         versionCode = 9
-        versionName = "alpha-1.8"
+        versionName = "alpha-1.9"
         buildConfigField("String", "TMDB_READ_ACCESS_TOKEN", "\"$tmdbToken\"")
     }
 

@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import android.net.Uri
 import com.example.ultimatetracker.ui.screens.DetailScreen
 import com.example.ultimatetracker.ui.screens.EditScreen
 import com.example.ultimatetracker.ui.screens.HomeScreen
@@ -13,6 +14,7 @@ import com.example.ultimatetracker.ui.screens.SettingsScreen
 import com.example.ultimatetracker.ui.screens.BrowseScreen
 import com.example.ultimatetracker.ui.screens.AccountScreen
 import com.example.ultimatetracker.ui.screens.AuthScreen
+import com.example.ultimatetracker.ui.screens.StatisticsScreen
 import com.example.ultimatetracker.viewmodel.MediaViewModel
 import com.example.ultimatetracker.viewmodel.AccountViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,7 +46,8 @@ fun AppNavigation(viewModel: MediaViewModel, accountViewModel: AccountViewModel)
                 onAdd = { navController.navigate("edit/0") },
                 onOpen = { navController.navigate("detail/$it") },
                 onSettings = { navController.navigate("settings") },
-                onBrowse = { navController.navigate("browse") },
+                onStatistics = { navController.navigate("statistics") },
+                onBrowse = { query -> navController.navigate("browse?query=${Uri.encode(query)}") },
                 onAccount = {
                     navController.navigate(if (accountState.user?.isGuest == true) "auth" else "account")
                 },
@@ -59,8 +62,9 @@ fun AppNavigation(viewModel: MediaViewModel, accountViewModel: AccountViewModel)
         }
         composable("account") { AccountScreen(accountViewModel, navController::popBackStack) }
         composable("settings") { SettingsScreen(viewModel, navController::popBackStack) }
-        composable("browse") {
-            BrowseScreen(viewModel, navController::popBackStack) {
+        composable("statistics") { StatisticsScreen(viewModel, navController::popBackStack) }
+        composable("browse?query={query}", arguments = listOf(navArgument("query") { type = NavType.StringType; defaultValue = "" })) { entry ->
+            BrowseScreen(viewModel, entry.arguments?.getString("query").orEmpty(), navController::popBackStack) {
                 navController.navigate("edit/0")
             }
         }

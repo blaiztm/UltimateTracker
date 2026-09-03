@@ -33,17 +33,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ultimatetracker.data.model.BuiltInMediaTypes
+import com.example.ultimatetracker.data.model.WatchCategory
+import com.example.ultimatetracker.data.model.CategoryRef
 import com.example.ultimatetracker.ui.components.MediaCover
 import com.example.ultimatetracker.viewmodel.MediaViewModel
 import com.example.ultimatetracker.R
 import com.example.ultimatetracker.ui.categoryLabel
 import com.example.ultimatetracker.ui.categoryColor
 import com.example.ultimatetracker.ui.mediaTypeLabel
+import java.text.DateFormat
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 fun DetailScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit, onEdit: () -> Unit) {
     val item by viewModel.observeItem(itemId).collectAsStateWithLifecycle(initialValue = null)
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
     var confirmDelete by remember { mutableStateOf(false) }
     Scaffold(topBar = {
         TopAppBar(
@@ -61,13 +65,16 @@ fun DetailScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit, on
                 MediaCover(value.coverUri, value.title, Modifier.fillMaxWidth().height(280.dp))
                 Text(value.title, style = MaterialTheme.typography.headlineSmall)
                 DetailRow(stringResource(R.string.type), mediaTypeLabel(value.type))
-                DetailRow(stringResource(R.string.category), categoryLabel(value.category), categoryColor(value.category))
+                DetailRow(stringResource(R.string.category), CategoryRef.builtIn(value.category)?.let { categoryLabel(it) } ?: categories.firstOrNull { it.id == value.category }?.name ?: value.category, categoryColor(value.category, categories))
                 DetailRow(if (value.type == BuiltInMediaTypes.MOVIE) stringResource(R.string.duration) else stringResource(R.string.episode_count), stringResource(if (value.type == BuiltInMediaTypes.MOVIE) R.string.minutes_format else R.string.episodes_format, value.length))
                 DetailRow(stringResource(R.string.genres), value.genres.ifEmpty { listOf(stringResource(R.string.not_specified)) }.joinToString())
                 DetailRow(stringResource(R.string.keywords), value.keywords.ifEmpty { listOf(stringResource(R.string.not_specified)) }.joinToString())
-                value.rating?.let { rating ->
-                    DetailRow(stringResource(R.string.rating), stringResource(R.string.rating_format, rating))
-                }
+                val categoryEnum = CategoryRef.builtIn(value.category)
+                if (categoryEnum == WatchCategory.PLANNED) value.priority?.let { DetailRow(stringResource(R.string.priority), it.toString(), priorityColor(it)) }
+                else value.rating?.let { rating -> DetailRow(stringResource(R.string.rating), stringResource(R.string.rating_format, rating)) }
+                if (categoryEnum in setOf(WatchCategory.WATCHING, WatchCategory.ON_HOLD) && value.type != BuiltInMediaTypes.MOVIE) DetailRow(stringResource(R.string.watched_episodes), stringResource(R.string.episodes_progress, value.watchedEpisodes, value.length))
+                value.watchStartedAt?.let { DetailRow(stringResource(R.string.watch_start_date), DateFormat.getDateInstance().format(it)) }
+                value.watchEndedAt?.let { DetailRow(stringResource(R.string.watch_end_date), DateFormat.getDateInstance().format(it)) }
                 if (value.review.isNotBlank()) {
                     Text(stringResource(R.string.review), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(value.review, style = MaterialTheme.typography.bodyLarge)
@@ -82,6 +89,13 @@ fun DetailScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit, on
         confirmButton = { TextButton(onClick = { item?.let { viewModel.delete(it, onBack) } }) { Text(stringResource(R.string.delete)) } },
         dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.cancel)) } },
     )
+}
+
+private fun priorityColor(priority: Int) = when (priority) {
+    1 -> androidx.compose.ui.graphics.Color(0xFF2E7D32)
+    2 -> androidx.compose.ui.graphics.Color(0xFF8BC34A)
+    3 -> androidx.compose.ui.graphics.Color(0xFFFBC02D)
+    else -> androidx.compose.ui.graphics.Color(0xFF757575)
 }
 
 @Composable

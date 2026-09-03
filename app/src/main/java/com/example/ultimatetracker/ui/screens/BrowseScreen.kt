@@ -23,10 +23,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,13 +40,15 @@ import com.example.ultimatetracker.R
 import com.example.ultimatetracker.data.remote.CatalogItem
 import com.example.ultimatetracker.ui.components.MediaCover
 import com.example.ultimatetracker.ui.mediaTypeLabel
+import com.example.ultimatetracker.viewmodel.CatalogSearchResult
 import com.example.ultimatetracker.viewmodel.MediaViewModel
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-fun BrowseScreen(viewModel: MediaViewModel, onBack: () -> Unit, onUse: (CatalogItem) -> Unit) {
+fun BrowseScreen(viewModel: MediaViewModel, initialQuery: String, onBack: () -> Unit, onUse: (CatalogItem) -> Unit) {
     val state by viewModel.catalogState.collectAsStateWithLifecycle()
     val language = LocalConfiguration.current.locales[0].language
+    LaunchedEffect(initialQuery) { if (initialQuery.isNotBlank()) viewModel.searchCatalog(initialQuery, language) }
     Scaffold(topBar = {
         TopAppBar(
             title = { Text(stringResource(R.string.online_search)) },
@@ -65,9 +69,9 @@ fun BrowseScreen(viewModel: MediaViewModel, onBack: () -> Unit, onUse: (CatalogI
                 state.isLoading -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
                 state.hasError -> Message(stringResource(R.string.network_error))
                 else -> LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(state.results, key = { "${it.mediaType}-${it.id}" }) { item ->
+                    items(state.results, key = { "${it.item.mediaType}-${it.item.id}" }) { item ->
                         CatalogCard(item) {
-                            viewModel.selectCatalogItem(item, language) { onUse(item) }
+                            viewModel.selectCatalogItem(item.item, language) { onUse(item.item) }
                         }
                     }
                 }
@@ -82,12 +86,18 @@ private fun Message(text: String) {
 }
 
 @Composable
-private fun CatalogCard(item: CatalogItem, onClick: () -> Unit) {
+private fun CatalogCard(result: CatalogSearchResult, onClick: () -> Unit) {
+    val item = result.item
     Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(Modifier.padding(10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             MediaCover(item.coverUri, item.title, Modifier.size(64.dp, 92.dp).clip(RoundedCornerShape(6.dp)))
             Column(Modifier.weight(1f)) {
                 Text(item.title, style = MaterialTheme.typography.titleMedium)
+                if (result.isInLibrary) Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                ) { Text("Already in library", modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp), style = MaterialTheme.typography.labelSmall) }
                 if (item.originalTitle != item.title) Text(item.originalTitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(listOfNotNull(mediaTypeLabel(item.mediaType), item.year).joinToString(" • "))
                 Text(stringResource(R.string.use_title), color = MaterialTheme.colorScheme.primary)

@@ -1,6 +1,8 @@
 package com.example.ultimatetracker
 
 import android.app.Application
+import android.content.ComponentName
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.room.Room
 import androidx.room.migration.Migration
@@ -11,9 +13,23 @@ import com.example.ultimatetracker.data.repository.AccountRepository
 import com.example.ultimatetracker.data.repository.ActiveIdentityStore
 import com.example.ultimatetracker.data.repository.BackupRepository
 import com.example.ultimatetracker.data.remote.TmdbClient
+import com.example.ultimatetracker.ui.theme.AppTheme
+import com.example.ultimatetracker.ui.theme.AppIconColor
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class UltimateTrackerApplication : Application() {
     private val preferences by lazy { getSharedPreferences("settings", MODE_PRIVATE) }
+    private val _theme = MutableStateFlow(AppTheme.ORIGINAL)
+    val theme = _theme.asStateFlow()
+    fun setTheme(value: AppTheme) { preferences.edit().putString("theme", value.name).apply(); _theme.value = value }
+    private val _iconColor = MutableStateFlow(AppIconColor.ORIGINAL)
+    val iconColor = _iconColor.asStateFlow()
+    fun setIconColor(value: AppIconColor) {
+        preferences.edit().putString("icon_color", value.name).apply()
+        updateLauncherIcon(value)
+        _iconColor.value = value
+    }
     private val identityStore by lazy { ActiveIdentityStore() }
     val tmdbClient by lazy {
         val token = if (preferences.contains("tmdb_token")) preferences.getString("tmdb_token", "").orEmpty() else BuildConfig.TMDB_READ_ACCESS_TOKEN
@@ -27,13 +43,34 @@ class UltimateTrackerApplication : Application() {
             .addMigrations(MIGRATION_4_5)
             .addMigrations(MIGRATION_5_6)
             .addMigrations(MIGRATION_6_7)
+            .addMigrations(MIGRATION_7_8)
+            .addMigrations(MIGRATION_8_9)
             .build()
     }
     val accountRepository by lazy {
         AccountRepository(database, preferences, identityStore, "${Build.MANUFACTURER} ${Build.MODEL}")
     }
-    val repository: MediaRepository by lazy { MediaRepository(database.mediaDao(), database.mediaTypeDao(), identityStore) }
+    val repository: MediaRepository by lazy { MediaRepository(database, database.mediaDao(), database.mediaTypeDao(), database.categoryDao(), identityStore) }
     val backupRepository by lazy { BackupRepository(this, database, identityStore) }
+
+    override fun onCreate() {
+        super.onCreate()
+        _theme.value = runCatching {
+            AppTheme.valueOf(preferences.getString("theme", AppTheme.ORIGINAL.name) ?: AppTheme.ORIGINAL.name)
+        }.getOrDefault(AppTheme.ORIGINAL)
+        _iconColor.value = runCatching { AppIconColor.valueOf(preferences.getString("icon_color", AppIconColor.ORIGINAL.name) ?: AppIconColor.ORIGINAL.name) }.getOrDefault(AppIconColor.ORIGINAL)
+        updateLauncherIcon(_iconColor.value)
+    }
+
+    private fun updateLauncherIcon(selected: AppIconColor) {
+        AppIconColor.entries.forEach { color ->
+            packageManager.setComponentEnabledSetting(
+                ComponentName(packageName, "$packageName.${color.alias}"),
+                if (color == selected) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP,
+            )
+        }
+    }
 
     private companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -95,6 +132,20 @@ class UltimateTrackerApplication : Application() {
         val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `user_profiles` ADD COLUMN `avatarUri` TEXT")
+            }
+        }
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `media_items` ADD COLUMN `priority` INTEGER")
+                db.execSQL("ALTER TABLE `media_items` ADD COLUMN `watchStartedAt` INTEGER")
+                db.execSQL("ALTER TABLE `media_items` ADD COLUMN `watchEndedAt` INTEGER")
+            }
+        }
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `custom_categories` (`id` TEXT NOT NULL, `listId` INTEGER NOT NULL, `name` TEXT NOT NULL, `normalizedName` TEXT NOT NULL, `color` TEXT NOT NULL, `position` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`listId`) REFERENCES `user_lists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_custom_categories_listId_normalizedName` ON `custom_categories` (`listId`, `normalizedName`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_custom_categories_listId_position` ON `custom_categories` (`listId`, `position`)")
             }
         }
     }

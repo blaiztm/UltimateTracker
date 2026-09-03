@@ -12,12 +12,20 @@
         android:theme="@style/Theme.UltimateTracker">
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true" />
+        <activity-alias android:name=".OriginalIcon" android:enabled="true" android:exported="true" android:icon="@drawable/ic_launcher_utracker" android:roundIcon="@drawable/ic_launcher_utracker" android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias android:name=".DeepDarkIcon" android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_deep_dark" android:roundIcon="@drawable/ic_launcher_deep_dark" android:targetActivity=".MainActivity"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity-alias>
+        <activity-alias android:name=".DarkIcon" android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_dark" android:roundIcon="@drawable/ic_launcher_dark" android:targetActivity=".MainActivity"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity-alias>
+        <activity-alias android:name=".LightIcon" android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_light" android:roundIcon="@drawable/ic_launcher_light" android:targetActivity=".MainActivity"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity-alias>
+        <activity-alias android:name=".ForestIcon" android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_forest" android:roundIcon="@drawable/ic_launcher_forest" android:targetActivity=".MainActivity"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity-alias>
+        <activity-alias android:name=".OceanIcon" android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_ocean" android:roundIcon="@drawable/ic_launcher_ocean" android:targetActivity=".MainActivity"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity-alias>
+        <activity-alias android:name=".CrimsonIcon" android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_crimson" android:roundIcon="@drawable/ic_launcher_crimson" android:targetActivity=".MainActivity"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity-alias>
+        <activity-alias android:name=".MetalIcon" android:enabled="false" android:exported="true" android:icon="@drawable/ic_launcher_metal" android:roundIcon="@drawable/ic_launcher_metal" android:targetActivity=".MainActivity"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity-alias>
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
             android:enabled="false"
