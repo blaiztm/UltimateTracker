@@ -2,5 +2,5 @@ Application version:
 
 
 
-1.1
+1.2
 
