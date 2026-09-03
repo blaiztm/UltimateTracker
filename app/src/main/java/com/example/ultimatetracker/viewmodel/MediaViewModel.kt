@@ -149,6 +149,8 @@ class MediaViewModel(private val repository: MediaRepository, private val tmdbCl
 
     val categories = repository.observeCategories()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val statusOverrides = repository.observeStatusOverrides()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val tagVocabulary = repository.observeAll()
         .map { items ->
@@ -303,6 +305,10 @@ class MediaViewModel(private val repository: MediaRepository, private val tmdbCl
 
     @Suppress("unused")
     fun addCategory(name: String, color: CategoryColor) = viewModelScope.launch { repository.addCategory(name, color) }
+
+    fun updateBuiltInStatus(status: String, name: String, color: CategoryColor) = viewModelScope.launch {
+        repository.updateBuiltInStatus(status, name, color)
+    }
     @Suppress("unused")
     fun deleteCategory(id: String, replacement: String) = viewModelScope.launch { repository.deleteCategory(id, replacement) }
 }

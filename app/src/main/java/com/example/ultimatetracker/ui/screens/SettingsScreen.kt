@@ -46,6 +46,7 @@ import com.example.ultimatetracker.ui.theme.AppIconColor
 import androidx.compose.ui.platform.LocalContext
 import com.example.ultimatetracker.data.model.CategoryColor
 import com.example.ultimatetracker.data.model.WatchCategory
+import com.example.ultimatetracker.ui.categoryLabel
 
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,11 +57,13 @@ fun SettingsScreen(viewModel: MediaViewModel, onBack: () -> Unit) {
     val theme by app.theme.collectAsStateWithLifecycle()
     val iconColor by app.iconColor.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val statusOverrides by viewModel.statusOverrides.collectAsStateWithLifecycle()
     var token by remember(savedToken) { mutableStateOf(savedToken) }
     var section by remember { mutableStateOf(SettingsSection.HOME) }
     var categoryName by remember { mutableStateOf("") }
     var categoryColor by remember { mutableStateOf(CategoryColor.RED) }
     var deletingId by remember { mutableStateOf<String?>(null) }
+    var editingStatus by remember { mutableStateOf<WatchCategory?>(null) }
     Scaffold(topBar = {
         TopAppBar(
             title = { Text(stringResource(section.title)) },
@@ -94,12 +97,30 @@ fun SettingsScreen(viewModel: MediaViewModel, onBack: () -> Unit) {
                     OutlinedTextField(value = token, onValueChange = { token = it }, label = { Text(stringResource(R.string.tmdb_token)) }, visualTransformation = PasswordVisualTransformation(), singleLine = true, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
                     Button(onClick = { viewModel.saveTmdbToken(token) }, modifier = Modifier.fillMaxWidth().padding(16.dp)) { Text(stringResource(R.string.save_tmdb_token)) }
                 }
-                SettingsSection.CATEGORIES -> {
+                SettingsSection.STATUSES -> {
+                    WatchCategory.entries.forEach { status ->
+                        val override = statusOverrides.firstOrNull { it.status == status.name }
+                        val statusName = categoryLabel(status, statusOverrides)
+                        ListItem(
+                            headlineContent = { Text(statusName) },
+                            supportingContent = { Text((override?.color ?: defaultStatusColor(status).name).lowercase()) },
+                            trailingContent = { TextButton(onClick = {
+                                editingStatus = status
+                                categoryName = statusName
+                                categoryColor = override?.color?.let(CategoryColor::valueOf) ?: defaultStatusColor(status)
+                            }) { Text(stringResource(R.string.edit)) } },
+                        )
+                    }
                     OutlinedTextField(value = categoryName, onValueChange = { categoryName = it }, label = { Text(stringResource(R.string.category_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
                     var colorsExpanded by remember { mutableStateOf(false) }
                     ListItem(headlineContent = { Text(stringResource(R.string.category_color)) }, supportingContent = { Text(categoryColor.name.lowercase().replaceFirstChar { it.titlecase() }) }, modifier = Modifier.fillMaxWidth().clickable { colorsExpanded = true })
                     DropdownMenu(expanded = colorsExpanded, onDismissRequest = { colorsExpanded = false }) { CategoryColor.entries.forEach { color -> DropdownMenuItem(text = { Text(color.name.lowercase().replaceFirstChar { it.titlecase() }) }, onClick = { categoryColor = color; colorsExpanded = false }) } }
-                    Button(onClick = { if (categoryName.isNotBlank()) { viewModel.addCategory(categoryName, categoryColor); categoryName = "" } }, modifier = Modifier.fillMaxWidth().padding(16.dp)) { Text(stringResource(R.string.add_category)) }
+                    Button(onClick = { if (categoryName.isNotBlank()) {
+                        editingStatus?.let { viewModel.updateBuiltInStatus(it.name, categoryName, categoryColor) }
+                            ?: viewModel.addCategory(categoryName, categoryColor)
+                        categoryName = ""
+                        editingStatus = null
+                    } }, modifier = Modifier.fillMaxWidth().padding(16.dp)) { Text(stringResource(if (editingStatus == null) R.string.add_status else R.string.save)) }
                     categories.forEach { category -> ListItem(headlineContent = { Text(category.name) }, supportingContent = { Text(category.color.lowercase()) }, trailingContent = { TextButton(onClick = { deletingId = category.id }) { Text(stringResource(R.string.delete)) } }) }
                 }
             }
@@ -117,7 +138,14 @@ private enum class SettingsSection(val title: Int, val summary: Int) {
     APPEARANCE(R.string.appearance, R.string.appearance_summary),
     LANGUAGE(R.string.language, R.string.language_summary),
     TMDB(R.string.tmdb_settings, R.string.tmdb_summary),
-    CATEGORIES(R.string.categories, R.string.categories_summary),
+    STATUSES(R.string.statuses, R.string.statuses_summary),
+}
+
+private fun defaultStatusColor(status: WatchCategory): CategoryColor = when (status) {
+    WatchCategory.PLANNED -> CategoryColor.BLUE
+    WatchCategory.WATCHING -> CategoryColor.PURPLE
+    WatchCategory.COMPLETED -> CategoryColor.GREEN
+    WatchCategory.ON_HOLD -> CategoryColor.ORANGE
 }
 
 @Composable

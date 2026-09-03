@@ -8,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import com.example.ultimatetracker.data.local.CategoryEntity
+import com.example.ultimatetracker.data.local.StatusOverrideEntity
 import com.example.ultimatetracker.data.model.CategoryColor
 import com.example.ultimatetracker.data.model.WatchCategory
 import com.example.ultimatetracker.data.model.CategoryRef
@@ -18,6 +19,10 @@ fun mediaTypeLabel(type: String): String = builtInTypeTitleRes(type)?.let { stri
 
 @Composable
 fun categoryLabel(category: String): String = CategoryRef.builtIn(category)?.let { stringResource(it.titleRes) } ?: category
+
+@Composable
+fun categoryLabel(category: String, overrides: List<StatusOverrideEntity>): String =
+    overrides.firstOrNull { it.status == category }?.name ?: categoryLabel(category)
 
 fun categoryColor(category: String): Color? = CategoryRef.builtIn(category)?.let {
     when (it) {
@@ -53,11 +58,41 @@ fun categoryColor(category: String, categories: List<CategoryEntity>): Color? {
 }
 
 @Composable
+fun categoryColor(category: String, categories: List<CategoryEntity>, overrides: List<StatusOverrideEntity>): Color? {
+    val override = overrides.firstOrNull { it.status == category }
+    return if (override == null) categoryColor(category, categories) else categoryColorValue(CategoryColor.valueOf(override.color))
+}
+
+@Composable
 fun categoryLabel(category: WatchCategory): String = stringResource(category.titleRes)
+
+@Composable
+fun categoryLabel(category: WatchCategory, overrides: List<StatusOverrideEntity>): String =
+    overrides.firstOrNull { it.status == category.name }?.name ?: categoryLabel(category)
 
 fun categoryColor(category: WatchCategory): Color = when (category) {
     WatchCategory.COMPLETED -> Color(0xFF83D6A0)
     WatchCategory.WATCHING -> Color(0xFFB99AFF)
     WatchCategory.ON_HOLD -> Color(0xFFFFC66D)
     WatchCategory.PLANNED -> Color(0xFF9DB7D9)
+}
+
+@Composable
+private fun categoryColorValue(color: CategoryColor): Color = when (color) {
+    CategoryColor.RED -> Color(0xFFE57373)
+    CategoryColor.ORANGE -> Color(0xFFFFB74D)
+    CategoryColor.YELLOW -> Color(0xFFFFF176)
+    CategoryColor.GREEN -> Color(0xFF81C784)
+    CategoryColor.BLUE -> Color(0xFF64B5F6)
+    CategoryColor.PURPLE -> Color(0xFFBA68C8)
+    CategoryColor.WHITE -> Color.White
+    CategoryColor.BLACK -> Color.Black
+    CategoryColor.RAINBOW -> Color.hsv(
+        rememberInfiniteTransition(label = "rainbowOverride").animateFloat(
+            initialValue = 0f, targetValue = 360f,
+            animationSpec = infiniteRepeatable(tween(2800)), label = "rainbowOverrideHue",
+        ).value,
+        0.55f,
+        0.95f,
+    )
 }

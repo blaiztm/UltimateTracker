@@ -61,6 +61,7 @@ import java.util.Locale
 fun StatisticsScreen(viewModel: MediaViewModel, onBack: () -> Unit) {
     val state by viewModel.statistics.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val statusOverrides by viewModel.statusOverrides.collectAsStateWithLifecycle()
     Scaffold(topBar = {
         TopAppBar(
             title = { Text(stringResource(R.string.statistics)) },
@@ -73,7 +74,7 @@ fun StatisticsScreen(viewModel: MediaViewModel, onBack: () -> Unit) {
         ) {
             if (state.totalTitles == 0) Text(stringResource(R.string.statistics_empty), modifier = Modifier.padding(top = 24.dp)) else {
                 JourneyHero(state)
-                StatusOverview(state, categories.associate { it.id to it.name })
+                StatusOverview(state, categories, statusOverrides)
                 KeyMetrics(state)
                 HistogramSection(stringResource(R.string.favorite_genres), state.genres)
                 HistogramSection(stringResource(R.string.work_types), state.typeCounts.entries.map { it.key to it.value }, label = { mediaTypeLabel(it) })
@@ -114,13 +115,13 @@ private fun JourneyHero(state: StatisticsUiState) {
 }
 
 @Composable
-private fun StatusOverview(state: StatisticsUiState, customNames: Map<String, String>) {
+private fun StatusOverview(state: StatisticsUiState, categories: List<com.example.ultimatetracker.data.local.CategoryEntity>, overrides: List<com.example.ultimatetracker.data.local.StatusOverrideEntity>) {
     SectionTitle(stringResource(R.string.collection_status))
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
         state.categoryCounts.entries.sortedWith(compareByDescending<Map.Entry<String, Int>> { CategoryRef.builtIn(it.key) == WatchCategory.COMPLETED }.thenByDescending { it.value }).forEach { (category, count) ->
             val builtIn = CategoryRef.builtIn(category)
-            val label = builtIn?.let { categoryLabel(it) } ?: customNames[category] ?: humanize(category)
-            val color = categoryColor(category) ?: MaterialTheme.colorScheme.secondary
+            val label = builtIn?.let { categoryLabel(it, overrides) } ?: categories.firstOrNull { it.id == category }?.name ?: humanize(category)
+            val color = categoryColor(category, categories, overrides) ?: MaterialTheme.colorScheme.secondary
             ProportionalRow(label, count, count.toFloat() / state.totalTitles, color, emphasize = builtIn == WatchCategory.COMPLETED, showPercent = true)
         }
     }

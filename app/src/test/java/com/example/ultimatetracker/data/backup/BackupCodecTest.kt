@@ -21,7 +21,7 @@ class BackupCodecTest {
                 length = 12,
                 genres = listOf("Drama"),
                 keywords = listOf("Sample"),
-                category = WatchCategory.WATCHING,
+                category = WatchCategory.WATCHING.name,
                 coverUri = "https://example.com/cover.jpg",
                 coverMimeType = null,
                 coverBase64 = null,

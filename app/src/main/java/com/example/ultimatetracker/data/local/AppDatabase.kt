@@ -16,6 +16,7 @@ import com.example.ultimatetracker.data.local.account.UserProfileEntity
         MediaEntity::class,
         MediaTypeEntity::class,
         CategoryEntity::class,
+        StatusOverrideEntity::class,
         UserEntity::class,
         UserProfileEntity::class,
         AccountEntity::class,
@@ -23,7 +24,7 @@ import com.example.ultimatetracker.data.local.account.UserProfileEntity
         UserListEntity::class,
         AuditEventEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = false,
 )
 @TypeConverters(Converters::class)
@@ -31,5 +32,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun mediaDao(): MediaDao
     abstract fun mediaTypeDao(): MediaTypeDao
     abstract fun categoryDao(): CategoryDao
+    abstract fun statusOverrideDao(): StatusOverrideDao
     abstract fun accountDao(): AccountDao
 }

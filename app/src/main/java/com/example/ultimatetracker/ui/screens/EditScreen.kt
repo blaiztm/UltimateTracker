@@ -79,6 +79,7 @@ fun EditScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit) {
     val existing by viewModel.observeItem(itemId).collectAsStateWithLifecycle(initialValue = null)
     val mediaTypes by viewModel.mediaTypes.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val statusOverrides by viewModel.statusOverrides.collectAsStateWithLifecycle()
     val tagVocabulary by viewModel.tagVocabulary.collectAsStateWithLifecycle()
     val catalogDraft by viewModel.catalogDraft.collectAsStateWithLifecycle()
     var form by remember(itemId) { mutableStateOf(MediaFormState(id = itemId)) }
@@ -204,7 +205,7 @@ fun EditScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit) {
             }
             DateSelector(stringResource(R.string.watch_start_date), form.watchStartedAt) { form = form.copy(watchStartedAt = it) }
             DateSelector(stringResource(R.string.watch_end_date), form.watchEndedAt) { form = form.copy(watchEndedAt = it) }
-            CategoryMenu(form.category, categories, onSelect = { form = form.copy(category = it) }, onAdd = { name, color -> viewModel.addCategory(name, color) })
+            CategoryMenu(form.category, categories, statusOverrides, onSelect = { form = form.copy(category = it) }, onAdd = { name, color -> viewModel.addCategory(name, color) })
             if (showErrors) form.validationError()?.let { error ->
                 Text(stringResource(when (error) { FormValidationError.TITLE -> R.string.error_title; FormValidationError.DURATION -> R.string.error_duration; FormValidationError.EPISODES -> R.string.error_episodes; FormValidationError.WATCHED_EPISODES -> R.string.error_watched_episodes; FormValidationError.RATING -> R.string.error_rating; FormValidationError.PRIORITY -> R.string.error_priority; FormValidationError.DATE_RANGE -> R.string.error_date_range }), color = MaterialTheme.colorScheme.error)
             }
@@ -273,21 +274,21 @@ private fun TypeMenu(selected: String, options: List<String>, onSelect: (String)
 }
 
 @Composable
-private fun CategoryMenu(selected: String, custom: List<CategoryEntity>, onSelect: (String) -> Unit, onAdd: (String, CategoryColor) -> Unit) {
+private fun CategoryMenu(selected: String, custom: List<CategoryEntity>, overrides: List<com.example.ultimatetracker.data.local.StatusOverrideEntity>, onSelect: (String) -> Unit, onAdd: (String, CategoryColor) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     var adding by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var color by remember { mutableStateOf(CategoryColor.RED) }
-    val label = CategoryRef.builtIn(selected)?.let { categoryLabel(it) } ?: custom.firstOrNull { it.id == selected }?.name ?: selected
+    val label = CategoryRef.builtIn(selected)?.let { categoryLabel(it, overrides) } ?: custom.firstOrNull { it.id == selected }?.name ?: selected
     Box(Modifier.fillMaxWidth()) {
         OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.category_format, label)) }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            WatchCategory.entries.forEach { category -> DropdownMenuItem(text = { Text(categoryLabel(category)) }, onClick = { onSelect(category.name); expanded = false }) }
+            WatchCategory.entries.forEach { category -> DropdownMenuItem(text = { Text(categoryLabel(category, overrides)) }, onClick = { onSelect(category.name); expanded = false }) }
             custom.forEach { category -> DropdownMenuItem(text = { Text(category.name) }, onClick = { onSelect(category.id); expanded = false }) }
-            DropdownMenuItem(text = { Text(stringResource(R.string.add_category)) }, leadingIcon = { Icon(Icons.Default.Add, null) }, onClick = { expanded = false; adding = true })
+            DropdownMenuItem(text = { Text(stringResource(R.string.add_status)) }, leadingIcon = { Icon(Icons.Default.Add, null) }, onClick = { expanded = false; adding = true })
         }
     }
-    if (adding) AlertDialog(onDismissRequest = { adding = false }, title = { Text(stringResource(R.string.add_category)) }, text = {
+    if (adding) AlertDialog(onDismissRequest = { adding = false }, title = { Text(stringResource(R.string.add_status)) }, text = {
         Column { OutlinedTextField(name, { name = it }, label = { Text(stringResource(R.string.category_name)) }, singleLine = true); CategoryColor.entries.forEach { option -> TextButton(onClick = { color = option }) { Text(if (color == option) "✓ ${option.name.lowercase()}" else option.name.lowercase()) } } }
     }, confirmButton = { TextButton(onClick = { if (name.isNotBlank()) { onAdd(name, color); adding = false; name = "" } }) { Text(stringResource(R.string.add)) } }, dismissButton = { TextButton(onClick = { adding = false }) { Text(stringResource(R.string.cancel)) } })
 }

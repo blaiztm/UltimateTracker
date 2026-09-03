@@ -45,12 +45,13 @@ class UltimateTrackerApplication : Application() {
             .addMigrations(MIGRATION_6_7)
             .addMigrations(MIGRATION_7_8)
             .addMigrations(MIGRATION_8_9)
+            .addMigrations(MIGRATION_9_10)
             .build()
     }
     val accountRepository by lazy {
         AccountRepository(database, preferences, identityStore, "${Build.MANUFACTURER} ${Build.MODEL}")
     }
-    val repository: MediaRepository by lazy { MediaRepository(database, database.mediaDao(), database.mediaTypeDao(), database.categoryDao(), identityStore) }
+    val repository: MediaRepository by lazy { MediaRepository(database, database.mediaDao(), database.mediaTypeDao(), database.categoryDao(), database.statusOverrideDao(), identityStore) }
     val backupRepository by lazy { BackupRepository(this, database, identityStore) }
 
     override fun onCreate() {
@@ -146,6 +147,12 @@ class UltimateTrackerApplication : Application() {
                 db.execSQL("CREATE TABLE IF NOT EXISTS `custom_categories` (`id` TEXT NOT NULL, `listId` INTEGER NOT NULL, `name` TEXT NOT NULL, `normalizedName` TEXT NOT NULL, `color` TEXT NOT NULL, `position` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`listId`) REFERENCES `user_lists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_custom_categories_listId_normalizedName` ON `custom_categories` (`listId`, `normalizedName`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_custom_categories_listId_position` ON `custom_categories` (`listId`, `position`)")
+            }
+        }
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `status_overrides` (`listId` INTEGER NOT NULL, `status` TEXT NOT NULL, `name` TEXT NOT NULL, `color` TEXT NOT NULL, PRIMARY KEY(`listId`, `status`), FOREIGN KEY(`listId`) REFERENCES `user_lists`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_status_overrides_listId` ON `status_overrides` (`listId`)")
             }
         }
     }

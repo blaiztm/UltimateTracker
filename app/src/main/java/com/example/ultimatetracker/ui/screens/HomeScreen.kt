@@ -80,6 +80,7 @@ import com.example.ultimatetracker.viewmodel.SortDirection
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 fun HomeScreen(viewModel: MediaViewModel, onAdd: () -> Unit, onOpen: (Long) -> Unit, onSettings: () -> Unit, onStatistics: () -> Unit, onBrowse: (String) -> Unit, onAccount: () -> Unit) {
     val state by viewModel.homeState.collectAsStateWithLifecycle()
+    val statusOverrides by viewModel.statusOverrides.collectAsStateWithLifecycle()
     var showFilters by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     LaunchedEffect(state.sortMode, state.sortDirection) { listState.scrollToItem(0) }
@@ -112,7 +113,7 @@ fun HomeScreen(viewModel: MediaViewModel, onAdd: () -> Unit, onOpen: (Long) -> U
                 item { CategoryChip(stringResource(R.string.all), null, state.category == null) { viewModel.setCategory(null) } }
                 items(WatchCategory.entries) { category ->
                     val categoryRef = CategoryRef.builtIn(category)
-                    CategoryChip(categoryLabel(category), categoryRef, state.category == categoryRef) { viewModel.setCategory(categoryRef) }
+                    CategoryChip(categoryLabel(category, statusOverrides), categoryRef, state.category == categoryRef, categoryColor(categoryRef, state.categories, statusOverrides)) { viewModel.setCategory(categoryRef) }
                 }
                 items(state.categories, key = { category -> category.id }) { category ->
                     CategoryChip(category.name, category.id, state.category == category.id, categoryColor(category.id, state.categories)) { viewModel.setCategory(category.id) }
@@ -141,7 +142,7 @@ fun HomeScreen(viewModel: MediaViewModel, onAdd: () -> Unit, onOpen: (Long) -> U
             } else {
                 LazyColumn(state = listState, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(state.items, key = { it.id }) { item ->
-                        MediaCard(item, state.categories, onClick = { onOpen(item.id) }, onCategory = { viewModel.updateCategory(item, it) })
+                        MediaCard(item, state.categories, statusOverrides, onClick = { onOpen(item.id) }, onCategory = { viewModel.updateCategory(item, it) })
                     }
                 }
             }
@@ -245,7 +246,7 @@ private fun CategoryChip(label: String, category: String?, selected: Boolean, cu
 }
 
 @Composable
-private fun MediaCard(item: MediaItem, categories: List<com.example.ultimatetracker.data.local.CategoryEntity>, onClick: () -> Unit, onCategory: (String) -> Unit) {
+private fun MediaCard(item: MediaItem, categories: List<com.example.ultimatetracker.data.local.CategoryEntity>, statusOverrides: List<com.example.ultimatetracker.data.local.StatusOverrideEntity>, onClick: () -> Unit, onCategory: (String) -> Unit) {
     var categoryMenu by remember(item.id) { mutableStateOf(false) }
     Card(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -255,12 +256,12 @@ private fun MediaCard(item: MediaItem, categories: List<com.example.ultimatetrac
                 Text(mediaTypeLabel(item.type), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Box {
                     TextButton(onClick = { categoryMenu = true }, contentPadding = PaddingValues(0.dp)) {
-                        Text(CategoryRef.builtIn(item.category)?.let { categoryLabel(it) } ?: categories.firstOrNull { it.id == item.category }?.name ?: item.category, color = categoryColor(item.category, categories) ?: MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(categoryLabel(item.category, statusOverrides).takeIf { CategoryRef.builtIn(item.category) != null } ?: categories.firstOrNull { it.id == item.category }?.name ?: item.category, color = categoryColor(item.category, categories, statusOverrides) ?: MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     DropdownMenu(expanded = categoryMenu, onDismissRequest = { categoryMenu = false }) {
                         WatchCategory.entries.forEach { category ->
                             DropdownMenuItem(
-                                text = { Text(categoryLabel(category)) },
+                                text = { Text(categoryLabel(category, statusOverrides)) },
                                 onClick = { onCategory(CategoryRef.builtIn(category)); categoryMenu = false },
                             )
                         }

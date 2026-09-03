@@ -7,6 +7,8 @@ import com.example.ultimatetracker.data.local.CategoryEntity
 import com.example.ultimatetracker.data.local.MediaDao
 import com.example.ultimatetracker.data.local.MediaTypeDao
 import com.example.ultimatetracker.data.local.MediaTypeEntity
+import com.example.ultimatetracker.data.local.StatusOverrideDao
+import com.example.ultimatetracker.data.local.StatusOverrideEntity
 import com.example.ultimatetracker.data.local.toEntity
 import com.example.ultimatetracker.data.local.toModel
 import com.example.ultimatetracker.data.model.MediaItem
@@ -26,6 +28,7 @@ class MediaRepository(
     private val dao: MediaDao,
     private val typeDao: MediaTypeDao,
     private val categoryDao: CategoryDao,
+    private val statusOverrideDao: StatusOverrideDao,
     private val identityStore: ActiveIdentityStore,
 ) {
     fun observeAll(): Flow<List<MediaItem>> = identityStore.identity.flatMapLatest { identity ->
@@ -56,6 +59,16 @@ class MediaRepository(
     }
     fun observeCategories() = identityStore.identity.flatMapLatest { identity ->
         if (identity == null) flowOf(emptyList()) else categoryDao.observeAll(identity.listId)
+    }
+    fun observeStatusOverrides() = identityStore.identity.flatMapLatest { identity ->
+        if (identity == null) flowOf(emptyList()) else statusOverrideDao.observeAll(identity.listId)
+    }
+    suspend fun updateBuiltInStatus(status: String, name: String, color: CategoryColor) {
+        val listId = identityStore.identity.value?.listId ?: throw SecurityException("No active list")
+        require(CategoryRef.builtIn(status) != null)
+        val trimmed = name.trim()
+        require(trimmed.isNotEmpty())
+        statusOverrideDao.upsert(StatusOverrideEntity(listId, status, trimmed, color.name))
     }
     @Suppress("unused")
     suspend fun addCategory(name: String, color: CategoryColor) {

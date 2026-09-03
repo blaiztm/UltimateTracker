@@ -21,8 +21,8 @@ android {
         applicationId = "com.example.ultimatetracker"
         minSdk = 23
         targetSdk = 36
-        versionCode = 9
-        versionName = "alpha-1.9"
+        versionCode = 10
+        versionName = "1.1"
         buildConfigField("String", "TMDB_READ_ACCESS_TOKEN", "\"$tmdbToken\"")
     }
 
