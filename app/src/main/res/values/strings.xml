@@ -35,4 +35,19 @@
     <string name="backup_wrong_format">This is not an UltimateTracker backup</string><string name="backup_newer_version">This backup was created by a newer unsupported format</string><string name="backup_too_large">The backup exceeds the allowed size or item limit</string><string name="backup_invalid">The backup is damaged or contains invalid data</string><string name="backup_io_error">Could not read or write the selected file</string>
     <string name="profile">Profile</string><string name="lists_folder">Lists</string><string name="lists_folder_hint">Manage your lists and transfer their data</string><string name="account_settings">Account settings</string><string name="account_settings_hint">Change your username or delete your account</string>
     <string name="profile_picture">Profile picture</string><string name="choose_profile_picture">Choose profile picture</string>
+    <string name="your_media_journey">Your Media Journey</string>
+    <string name="completed_titles_count">%1$d of %2$d titles</string>
+    <string name="collection_status">Collection status</string>
+    <string name="key_metrics">Key metrics</string>
+    <string name="movie_duration">Movie duration</string>
+    <string name="episode_progress">Episode progress</string>
+    <string name="episodes_remaining">%1$d episodes remaining</string>
+    <string name="favorite_genres">Favorite genres</string>
+    <string name="work_types">Work types</string>
+    <string name="rating_distribution">Rating distribution</string>
+    <string name="planned_priorities">Planned priorities</string>
+    <string name="priority_value">Priority %1$d</string>
+    <string name="hours_minutes_format">%1$dh %2$dm</string>
+    <string name="hours_format">%1$dh</string>
+    <string name="minutes_short_format">%1$dm</string>
 </resources>

@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,7 +63,7 @@ fun DetailScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit, on
         val value = item
         if (value == null) Text(stringResource(R.string.item_not_found), Modifier.padding(padding).padding(24.dp)) else
             Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                MediaCover(value.coverUri, value.title, Modifier.fillMaxWidth().height(280.dp))
+                MediaCover(value.coverUri, value.title, Modifier.fillMaxWidth().height(280.dp), ContentScale.Fit)
                 Text(value.title, style = MaterialTheme.typography.headlineSmall)
                 DetailRow(stringResource(R.string.type), mediaTypeLabel(value.type))
                 DetailRow(stringResource(R.string.category), CategoryRef.builtIn(value.category)?.let { categoryLabel(it) } ?: categories.firstOrNull { it.id == value.category }?.name ?: value.category, categoryColor(value.category, categories))

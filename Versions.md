@@ -2,5 +2,5 @@ Application version:
 
 
 
-alpha-1.9
+1.0
 

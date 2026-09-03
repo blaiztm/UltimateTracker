@@ -46,6 +46,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
@@ -240,10 +241,19 @@ private fun TypeMenu(selected: String, options: List<String>, onSelect: (String)
     var expanded by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
     var newType by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     Box(Modifier.fillMaxWidth()) {
-        OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.type_format, mediaTypeLabel(selected))) }
+        OutlinedButton(
+            onClick = {
+                focusManager.clearFocus(force = true)
+                keyboard?.hide()
+                expanded = true
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text(stringResource(R.string.type_format, mediaTypeLabel(selected))) }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { option -> DropdownMenuItem(text = { Text(mediaTypeLabel(option)) }, onClick = { onSelect(option); expanded = false }) }
+            options.forEach { option -> DropdownMenuItem(text = { Text(mediaTypeLabel(option)) }, onClick = { expanded = false; onSelect(option) }) }
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.add_custom_type)) },
                 leadingIcon = { Icon(Icons.Default.Add, null) },

@@ -15,7 +15,7 @@ import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 
 @Composable
-fun MediaCover(uri: String?, description: String?, modifier: Modifier = Modifier) {
+fun MediaCover(uri: String?, description: String?, modifier: Modifier = Modifier, contentScale: ContentScale = ContentScale.Crop) {
     Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
         if (uri.isNullOrBlank()) {
             Icon(Icons.Outlined.Image, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -23,7 +23,7 @@ fun MediaCover(uri: String?, description: String?, modifier: Modifier = Modifier
             SubcomposeAsyncImage(
                 model = uri,
                 contentDescription = description,
-                contentScale = ContentScale.Crop,
+                contentScale = contentScale,
                 modifier = Modifier.fillMaxSize(),
                 loading = { Placeholder() },
                 error = { Placeholder() },

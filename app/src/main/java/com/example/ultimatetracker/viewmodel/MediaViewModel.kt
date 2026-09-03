@@ -40,7 +40,7 @@ data class HomeUiState(
     val sortDirection: SortDirection = SortDirection.ASCENDING,
 )
 
-enum class SortMode { TITLE, RATING, DURATION }
+enum class SortMode { TITLE, RATING, PRIORITY, DURATION }
 enum class SortDirection { ASCENDING, DESCENDING }
 
 data class MediaFormState(
@@ -211,7 +211,12 @@ class MediaViewModel(private val repository: MediaRepository, private val tmdbCl
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
-    fun setCategory(value: String?) { selectedCategory.value = value }
+    fun setCategory(value: String?) {
+        val planned = value?.let(CategoryRef::builtIn) == WatchCategory.PLANNED
+        if (planned && sortMode.value == SortMode.RATING) sortMode.value = SortMode.PRIORITY
+        if (!planned && sortMode.value == SortMode.PRIORITY) sortMode.value = SortMode.RATING
+        selectedCategory.value = value
+    }
     fun setQuery(value: String) { query.value = value }
     fun toggleGenre(value: String) { selectedGenres.value = selectedGenres.value.toggle(value) }
     fun toggleKeyword(value: String) { selectedKeywords.value = selectedKeywords.value.toggle(value) }
@@ -333,6 +338,7 @@ private fun SortMode.comparator(direction: SortDirection): Comparator<MediaItem>
     return when (this) {
         SortMode.TITLE -> if (direction == SortDirection.ASCENDING) titleTieBreaker else compareByDescending<MediaItem> { it.title.lowercase() }.then(titleTieBreaker)
         SortMode.RATING -> compareBy<MediaItem> { it.rating == null }.then(if (direction == SortDirection.ASCENDING) compareBy { it.rating } else compareByDescending { it.rating }).then(titleTieBreaker)
+        SortMode.PRIORITY -> compareBy<MediaItem> { it.priority == null }.then(if (direction == SortDirection.ASCENDING) compareBy { it.priority } else compareByDescending { it.priority }).then(titleTieBreaker)
         SortMode.DURATION -> (if (direction == SortDirection.ASCENDING) compareBy<MediaItem> { it.length } else compareByDescending { it.length }).then(titleTieBreaker)
     }
 }

@@ -119,7 +119,7 @@ fun HomeScreen(viewModel: MediaViewModel, onAdd: () -> Unit, onOpen: (Long) -> U
                 }
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                SortMenu(state.sortMode, state.sortDirection, viewModel::setSortMode, viewModel::toggleSortDirection, Modifier.weight(1f))
+                SortMenu(state.sortMode, state.sortDirection, state.category?.let(CategoryRef::builtIn) == WatchCategory.PLANNED, viewModel::setSortMode, viewModel::toggleSortDirection, Modifier.weight(1f))
                 if (state.availableGenres.isNotEmpty() || state.availableKeywords.isNotEmpty() || state.availableTypes.isNotEmpty()) {
                     OutlinedButton(
                         onClick = { showFilters = true },
@@ -209,8 +209,9 @@ private fun FilterDialog(
 }
 
 @Composable
-private fun SortMenu(selected: SortMode, direction: SortDirection, onSelect: (SortMode) -> Unit, onToggleDirection: () -> Unit, modifier: Modifier = Modifier) {
+private fun SortMenu(selected: SortMode, direction: SortDirection, planned: Boolean, onSelect: (SortMode) -> Unit, onToggleDirection: () -> Unit, modifier: Modifier = Modifier) {
     var expanded by remember { mutableStateOf(false) }
+    val modes = SortMode.entries.filter { if (planned) it != SortMode.RATING else it != SortMode.PRIORITY }
     Box(modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedButton(onClick = { expanded = true }, modifier = Modifier.weight(1f)) { Text("${stringResource(R.string.sort)}: ${stringResource(selected.titleRes())}") }
@@ -219,7 +220,7 @@ private fun SortMenu(selected: SortMode, direction: SortDirection, onSelect: (So
             }
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            SortMode.entries.forEach { mode ->
+            modes.forEach { mode ->
                 DropdownMenuItem(text = { Text(stringResource(mode.titleRes())) }, onClick = { onSelect(mode); expanded = false })
             }
         }
@@ -229,6 +230,7 @@ private fun SortMenu(selected: SortMode, direction: SortDirection, onSelect: (So
 private fun SortMode.titleRes() = when (this) {
     SortMode.TITLE -> R.string.sort_title
     SortMode.RATING -> R.string.sort_rating
+    SortMode.PRIORITY -> R.string.priority
     SortMode.DURATION -> R.string.sort_duration
 }
 

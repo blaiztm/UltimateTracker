@@ -34,4 +34,19 @@
     <string name="backup_wrong_format">Это не резервная копия UltimateTracker</string><string name="backup_newer_version">Файл создан в более новой неподдерживаемой версии формата</string><string name="backup_too_large">Резервная копия превышает допустимый размер или лимит элементов</string><string name="backup_invalid">Резервная копия повреждена или содержит недопустимые данные</string><string name="backup_io_error">Не удалось прочитать или записать выбранный файл</string>
     <string name="profile">Профиль</string><string name="lists_folder">Списки</string><string name="lists_folder_hint">Управление списками и перенос данных</string><string name="account_settings">Настройки аккаунта</string><string name="account_settings_hint">Изменение имени или удаление аккаунта</string>
     <string name="profile_picture">Фото профиля</string><string name="choose_profile_picture">Выбрать фото профиля</string>
+    <string name="your_media_journey">Ваш медиапуть</string>
+    <string name="completed_titles_count">Просмотрено: %1$d из %2$d</string>
+    <string name="collection_status">Статус коллекции</string>
+    <string name="key_metrics">Ключевые показатели</string>
+    <string name="movie_duration">Время фильмов</string>
+    <string name="episode_progress">Прогресс по сериям</string>
+    <string name="episodes_remaining">Осталось серий: %1$d</string>
+    <string name="favorite_genres">Любимые жанры</string>
+    <string name="work_types">Типы произведений</string>
+    <string name="rating_distribution">Распределение оценок</string>
+    <string name="planned_priorities">Приоритеты планов</string>
+    <string name="priority_value">Приоритет %1$d</string>
+    <string name="hours_minutes_format">%1$d ч %2$d мин</string>
+    <string name="hours_format">%1$d ч</string>
+    <string name="minutes_short_format">%1$d мин</string>
 </resources>
