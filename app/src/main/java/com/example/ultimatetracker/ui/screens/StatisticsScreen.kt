@@ -136,16 +136,7 @@ private fun KeyMetrics(state: StatisticsUiState) {
             Metric(stringResource(R.string.movie_duration), formatDuration(state.movieMinutes), Modifier.weight(1f))
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        val progress = if (state.totalEpisodes == 0) 0f else state.watchedEpisodes.toFloat() / state.totalEpisodes
-        val remaining = (state.totalEpisodes - state.watchedEpisodes).coerceAtLeast(0)
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(stringResource(R.string.episode_progress), style = MaterialTheme.typography.titleSmall)
-                Text("${state.watchedEpisodes} / ${state.totalEpisodes}", fontWeight = FontWeight.SemiBold)
-            }
-            AnimatedBar(progress, MaterialTheme.colorScheme.primary)
-            Text(stringResource(R.string.episodes_remaining, remaining), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        Metric(stringResource(R.string.watched_episodes), state.watchedEpisodes.toString())
     }
 }
 

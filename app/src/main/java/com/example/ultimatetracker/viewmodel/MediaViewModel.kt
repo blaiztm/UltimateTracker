@@ -40,7 +40,7 @@ data class HomeUiState(
     val sortDirection: SortDirection = SortDirection.ASCENDING,
 )
 
-enum class SortMode { TITLE, RATING, PRIORITY, DURATION }
+enum class SortMode { TITLE, RATING, PRIORITY, DURATION, WATCH_START_DATE, WATCH_END_DATE }
 enum class SortDirection { ASCENDING, DESCENDING }
 
 data class MediaFormState(
@@ -125,13 +125,13 @@ class MediaViewModel(private val repository: MediaRepository, private val tmdbCl
     private val sortDirection = MutableStateFlow(SortDirection.ASCENDING)
     private val _catalogState = MutableStateFlow(CatalogSearchState(keyMissing = !tmdbClient.isConfigured))
     val libraryTitleMembership = repository.observeAll()
-        .map { items -> items.map { it.title.normalizedIdentity() }.toSet() }
+        .map { items -> items.map { it.title.libraryIdentity(it.type) }.toSet() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
 
     val catalogState = combine(_catalogState, libraryTitleMembership) { state, libraryTitles ->
         CatalogUiState(
             query = state.query,
-            results = state.results.map { CatalogSearchResult(it, it.title.normalizedIdentity() in libraryTitles) },
+            results = state.results.map { CatalogSearchResult(it, it.title.libraryIdentity(it.mediaType) in libraryTitles) },
             isLoading = state.isLoading,
             hasError = state.hasError,
             keyMissing = state.keyMissing,
@@ -316,15 +316,17 @@ class MediaViewModel(private val repository: MediaRepository, private val tmdbCl
 private data class FilterState(val category: String?, val query: String, val genres: Set<String>, val keywords: Set<String>, val types: Set<String>, val sort: SortMode, val direction: SortDirection)
 private fun Set<String>.toggle(value: String) = if (value in this) this - value else this + value
 private fun String.normalizedIdentity() = trim().lowercase(Locale.ROOT)
+internal fun String.libraryIdentity(type: String) = normalizedIdentity() to (type == BuiltInMediaTypes.MOVIE)
 private fun List<String>.normalizedDistinct() = asSequence()
     .map(String::trim)
     .filter(String::isNotEmpty)
     .distinctBy(String::normalizedIdentity)
     .sortedBy(String::normalizedIdentity)
     .toList()
-private fun calculateStatistics(items: List<MediaItem>): StatisticsUiState {
+internal fun calculateStatistics(items: List<MediaItem>): StatisticsUiState {
     val rated = items.mapNotNull { it.rating }
     val progressing = items.filter { CategoryRef.builtIn(it.category) in setOf(WatchCategory.WATCHING, WatchCategory.ON_HOLD) && it.type != BuiltInMediaTypes.MOVIE }
+    val completedEpisodes = items.filter { CategoryRef.builtIn(it.category) == WatchCategory.COMPLETED && it.type != BuiltInMediaTypes.MOVIE }
     fun frequent(values: List<String>) = values.groupingBy { it.trim() }.eachCount().entries.sortedWith(compareByDescending<Map.Entry<String, Int>> { it.value }.thenBy { it.key }).take(5).map { it.key to it.value }
     return StatisticsUiState(
         totalTitles = items.size,
@@ -333,21 +335,27 @@ private fun calculateStatistics(items: List<MediaItem>): StatisticsUiState {
         typeCounts = items.groupingBy { it.type }.eachCount(),
         averageRating = rated.takeIf { it.isNotEmpty() }?.average(),
         ratingDistribution = rated.groupingBy { it }.eachCount(),
-        movieMinutes = items.filter { it.type == BuiltInMediaTypes.MOVIE }.sumOf { it.length },
-        totalEpisodes = progressing.sumOf { it.length }, watchedEpisodes = progressing.sumOf { it.watchedEpisodes },
+        movieMinutes = items.filter { it.type == BuiltInMediaTypes.MOVIE && CategoryRef.builtIn(it.category) == WatchCategory.COMPLETED }.sumOf { it.length },
+        totalEpisodes = (progressing + completedEpisodes).sumOf { it.length },
+        watchedEpisodes = progressing.sumOf { it.watchedEpisodes } + completedEpisodes.sumOf { it.length },
         priorityDistribution = items.filter { CategoryRef.builtIn(it.category) == WatchCategory.PLANNED }.mapNotNull { it.priority }.groupingBy { it }.eachCount(),
         genres = frequent(items.flatMap { it.genres }), keywords = frequent(items.flatMap { it.keywords }),
     )
 }
-private fun SortMode.comparator(direction: SortDirection): Comparator<MediaItem> {
+internal fun SortMode.comparator(direction: SortDirection): Comparator<MediaItem> {
     val titleTieBreaker = compareBy<MediaItem> { it.title.lowercase() }.thenBy { it.id }
     return when (this) {
         SortMode.TITLE -> if (direction == SortDirection.ASCENDING) titleTieBreaker else compareByDescending<MediaItem> { it.title.lowercase() }.then(titleTieBreaker)
         SortMode.RATING -> compareBy<MediaItem> { it.rating == null }.then(if (direction == SortDirection.ASCENDING) compareBy { it.rating } else compareByDescending { it.rating }).then(titleTieBreaker)
         SortMode.PRIORITY -> compareBy<MediaItem> { it.priority == null }.then(if (direction == SortDirection.ASCENDING) compareBy { it.priority } else compareByDescending { it.priority }).then(titleTieBreaker)
         SortMode.DURATION -> (if (direction == SortDirection.ASCENDING) compareBy<MediaItem> { it.length } else compareByDescending { it.length }).then(titleTieBreaker)
+        SortMode.WATCH_START_DATE -> nullableDateComparator(direction) { it.watchStartedAt }.then(titleTieBreaker)
+        SortMode.WATCH_END_DATE -> nullableDateComparator(direction) { it.watchEndedAt }.then(titleTieBreaker)
     }
 }
+
+private fun nullableDateComparator(direction: SortDirection, value: (MediaItem) -> Long?) =
+    compareBy<MediaItem> { value(it) == null }.then(if (direction == SortDirection.ASCENDING) compareBy(value) else compareByDescending(value))
 
 class MediaViewModelFactory(private val repository: MediaRepository, private val tmdbClient: TmdbClient) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")

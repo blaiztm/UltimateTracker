@@ -74,7 +74,7 @@ fun DetailScreen(viewModel: MediaViewModel, itemId: Long, onBack: () -> Unit, on
                 val categoryEnum = CategoryRef.builtIn(value.category)
                 if (categoryEnum == WatchCategory.PLANNED) value.priority?.let { DetailRow(stringResource(R.string.priority), it.toString(), priorityColor(it)) }
                 else value.rating?.let { rating -> DetailRow(stringResource(R.string.rating), stringResource(R.string.rating_format, rating)) }
-                if (categoryEnum in setOf(WatchCategory.WATCHING, WatchCategory.ON_HOLD) && value.type != BuiltInMediaTypes.MOVIE) DetailRow(stringResource(R.string.watched_episodes), stringResource(R.string.episodes_progress, value.watchedEpisodes, value.length))
+                if (categoryEnum in setOf(WatchCategory.WATCHING, WatchCategory.ON_HOLD) && value.type != BuiltInMediaTypes.MOVIE) DetailRow(stringResource(R.string.watched_episodes), value.watchedEpisodes.toString())
                 value.watchStartedAt?.let { DetailRow(stringResource(R.string.watch_start_date), DateFormat.getDateInstance().format(it)) }
                 value.watchEndedAt?.let { DetailRow(stringResource(R.string.watch_end_date), DateFormat.getDateInstance().format(it)) }
                 if (value.review.isNotBlank()) {

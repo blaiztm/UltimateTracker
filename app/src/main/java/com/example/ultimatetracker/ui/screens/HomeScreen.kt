@@ -44,7 +44,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -233,6 +232,8 @@ private fun SortMode.titleRes() = when (this) {
     SortMode.RATING -> R.string.sort_rating
     SortMode.PRIORITY -> R.string.priority
     SortMode.DURATION -> R.string.sort_duration
+    SortMode.WATCH_START_DATE -> R.string.sort_start_date
+    SortMode.WATCH_END_DATE -> R.string.sort_end_date
 }
 
 @Composable
@@ -270,11 +271,7 @@ private fun MediaCard(item: MediaItem, categories: List<com.example.ultimatetrac
                 }
                 Text(stringResource(if (item.type == BuiltInMediaTypes.MOVIE) R.string.minutes_format else R.string.episodes_format, item.length))
                 if (CategoryRef.builtIn(item.category) in setOf(WatchCategory.WATCHING, WatchCategory.ON_HOLD) && item.type != BuiltInMediaTypes.MOVIE) {
-                    Text(stringResource(R.string.episodes_progress, item.watchedEpisodes, item.length))
-                    LinearProgressIndicator(
-                        progress = item.watchedEpisodes.toFloat() / item.length,
-                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    )
+                    Text("${stringResource(R.string.watched_episodes)}: ${item.watchedEpisodes}")
                 }
             }
             val score = if (CategoryRef.builtIn(item.category) == WatchCategory.PLANNED) item.priority else item.rating
